@@ -1,0 +1,131 @@
+{
+  "xkxx": [
+    {
+      "10241101": {
+        "courseName": "高等数学（上）",
+        "attendClassTeacher": "王建国",
+        "coursePropertiesName": "必修",
+        "courseCategoryName": "公共基础课",
+        "unit": 5.0,
+        "examTypeName": "考试",
+        "selectCourseStatusName": "已选",
+        "timeAndPlaceList": [
+          {
+            "classDay": 1,
+            "classSessions": "1",
+            "continuingSession": 2,
+            "weekDescription": "1-18周",
+            "campusName": "七一路校区",
+            "teachingBuildingName": "第三教学楼",
+            "classroomName": "3-201"
+          },
+          {
+            "classDay": 3,
+            "classSessions": "3",
+            "continuingSession": 2,
+            "weekDescription": "1-18周",
+            "campusName": "七一路校区",
+            "teachingBuildingName": "第三教学楼",
+            "classroomName": "3-201"
+          }
+        ]
+      }
+    },
+    {
+      "10302055": {
+        "courseName": "大学英语读写译",
+        "attendClassTeacher": "李慧敏",
+        "coursePropertiesName": "必修",
+        "courseCategoryName": "公共基础课",
+        "unit": 3.0,
+        "examTypeName": "考试",
+        "selectCourseStatusName": "已选",
+        "timeAndPlaceList": [
+          {
+            "classDay": 2,
+            "classSessions": "5",
+            "continuingSession": 2,
+            "weekDescription": "1-16周(单)",
+            "campusName": "七一路校区",
+            "teachingBuildingName": "第一教学楼",
+            "classroomName": "1-405"
+          },
+          {
+            "classDay": 4,
+            "classSessions": "7",
+            "continuingSession": 1,
+            "weekDescription": "2-16周(双)",
+            "campusName": "七一路校区",
+            "teachingBuildingName": "第一教学楼",
+            "classroomName": "1-405"
+          }
+        ]
+      }
+    },
+    {
+      "10511233": {
+        "courseName": "数据结构与算法",
+        "attendClassTeacher": "张海涛",
+        "coursePropertiesName": "必修",
+        "courseCategoryName": "专业核心课",
+        "unit": 4.0,
+        "examTypeName": "考试",
+        "selectCourseStatusName": "已选",
+        "timeAndPlaceList": [
+          {
+            "classDay": 1,
+            "classSessions": "5",
+            "continuingSession": 3,
+            "weekDescription": "1-18周",
+            "campusName": "七一路校区",
+            "teachingBuildingName": "第二教学楼",
+            "classroomName": "2-103"
+          },
+          {
+            "classDay": 5,
+            "classSessions": "1",
+            "continuingSession": 2,
+            "weekDescription": "3-15周",
+            "campusName": "七一路校区",
+            "teachingBuildingName": "第二教学楼",
+            "classroomName": "2-103"
+          }
+        ]
+      }
+    },
+    {
+      "10772008": {
+        "courseName": "体育（篮球选项课）",
+        "attendClassTeacher": "陈强",
+        "coursePropertiesName": "必修",
+        "courseCategoryName": "公共基础课",
+        "unit": 1.0,
+        "examTypeName": "考查",
+        "selectCourseStatusName": "已选",
+        "timeAndPlaceList": [
+          {
+            "classDay": 3,
+            "classSessions": "9",
+            "continuingSession": 2,
+            "weekDescription": "1-18周",
+            "campusName": "七一路校区",
+            "teachingBuildingName": "室外场地",
+            "classroomName": "北篮球场"
+          }
+        ]
+      }
+    },
+    {
+      "10995001": {
+        "courseName": "军事技能训练",
+        "attendClassTeacher": "",
+        "coursePropertiesName": "必修",
+        "courseCategoryName": "实践教学环节",
+        "unit": 2.0,
+        "examTypeName": "考查",
+        "selectCourseStatusName": "已选",
+        "timeAndPlaceList": []
+      }
+    }
+  ]
+}

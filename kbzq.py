@@ -3,6 +3,8 @@ import json
 import time
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeoutError
 
+import schedule_model
+
 # ================= 配置 =================
 BASE_VPN = "https://v.hbu.cn"
 HEADLESS = False   # 需要扫码登录，保持有头模式
@@ -114,62 +116,35 @@ def get_schedule_by_playwright():
         return captured["data"]
 
 
-def parse_courses(raw_data: dict):
-    result = []
-    xkxx_list = raw_data.get("xkxx", [])
-    # 接口真实结构: xkxx = [ {"课程编号": 课程详情对象}, ... ]
-    for item_dict in xkxx_list:
-        for _, course_info in item_dict.items():
-            base = {
-                "课程名称": course_info.get("courseName", "").strip(),
-                "教师": course_info.get("attendClassTeacher", "").strip(),
-                "课程性质": course_info.get("coursePropertiesName", ""),
-                "课程类别": course_info.get("courseCategoryName", ""),
-                "学分": course_info.get("unit", 0),
-                "考试类型": course_info.get("examTypeName", ""),
-                "选课状态": course_info.get("selectCourseStatusName", ""),
-                "上课安排": []
-            }
-            for t in course_info.get("timeAndPlaceList", []):
-                base["上课安排"].append({
-                    "星期": t.get("classDay"),
-                    "节次": f"{t.get('classSessions')}-{t.get('classSessions') + t.get('continuingSession') - 1}",
-                    "周次描述": t.get("weekDescription", ""),
-                    "校区": t.get("campusName", ""),
-                    "教学楼": t.get("teachingBuildingName", ""),
-                    "教室": t.get("classroomName", "")
-                })
-            result.append(base)
-    return result
-
-
 def print_schedule(course_list):
     print("=" * 100)
     print("📚 河北大学 本学期课表")
     print("=" * 100)
-    week_map = {1: "周一", 2: "周二", 3: "周三", 4: "周四", 5: "周五", 6: "周六", 7: "周日"}
     for idx, c in enumerate(course_list, 1):
-        print(f"\n【{idx}】{c['课程名称']} | {c['课程性质']} | 学分:{c['学分']} | {c['考试类型']}")
-        print(f"\t授课教师: {c['教师']}")
-        if not c["上课安排"]:
+        print(f"\n【{idx}】{c.name} | {c.property} | 学分:{c.credits} | {c.exam_type}")
+        print(f"\t授课教师: {c.teacher or '未安排'}")
+        if not c.meetings:
             print("\t⚠️ 该课程无排课地点（实训/军事技能等）")
             continue
-        for arr in c["上课安排"]:
-            wd = week_map.get(arr["星期"], f"星期{arr['星期']}")
-            print(f"\t▸ {wd} 第{arr['节次']}节 | {arr['周次描述']} | {arr['校区']} {arr['教学楼']} {arr['教室']}")
+        for m in c.meetings:
+            print(f"\t▸ {schedule_model.WEEK_CN.get(m.day, f'星期{m.day}')} "
+                  f"{m.session_label} | {m.week_description or '全学期'} | {m.location}")
     print("\n" + "=" * 100)
 
 
 def save_json(course_list, filename="schedule_out.json"):
+    payload = {"courses": [c.to_dict() for c in course_list]}
     with open(filename, "w", encoding="utf-8") as f:
-        json.dump(course_list, f, ensure_ascii=False, indent=2)
-    print(f"\n✅ 解析完成,结构化课表保存至 {filename}")
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    print(f"\n✅ 解析完成,结构化课表保存至 {filename}（运行 python3 app.py 查看界面）")
 
 
 if __name__ == "__main__":
     try:
         raw_json = get_schedule_by_playwright()
-        courses = parse_courses(raw_json)
+        with open("schedule_raw.json", "w", encoding="utf-8") as f:
+            json.dump(raw_json, f, ensure_ascii=False, indent=2)
+        courses = schedule_model.normalize(raw_json)
         print_schedule(courses)
         save_json(courses)
     except Exception as e:

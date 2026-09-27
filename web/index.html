@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>河北大学课表</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <h1>河北大学课表</h1>
+  <div class="toolbar">
+    <label>周次
+      <select id="weekSelect"></select>
+    </label>
+    <button id="btnIcs" title="生成 .ics 文件，导入手机/电脑系统日历">导出到日历</button>
+    <button id="btnRefresh">抓取课表</button>
+    <label class="filebtn">载入 JSON<input type="file" id="fileInput" accept=".json,.txt"></label>
+    <button id="btnSettings" class="ghost">学期设置</button>
+  </div>
+</header>
+
+<div id="settingsPanel" class="panel hidden">
+  <label>第 1 周周一是 <input type="date" id="week1Input"></label>
+  <label>学期总周数 <input type="number" id="weeksInput" min="1" max="30"></label>
+  <button id="btnSaveSettings">保存</button>
+  <span class="hint">教务数据只给"第几周"，日历要具体日期，所以必须告诉它学期从哪天开始。</span>
+</div>
+
+<div id="banner" class="banner hidden"></div>
+
+<main>
+  <section id="today" class="today"></section>
+  <section class="grid-wrap"><table id="grid" class="grid"></table></section>
+  <section id="courseList" class="courses"></section>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

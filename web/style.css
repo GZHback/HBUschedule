@@ -1,0 +1,87 @@
+:root {
+  --bg: #f6f7f9;
+  --fg: #1c2330;
+  --muted: #6b7686;
+  --line: #e3e6ea;
+  --accent: #2f6fdb;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 14px/1.5 -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+}
+header {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px 20px; background: #fff; border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 10; flex-wrap: wrap;
+}
+h1 { font-size: 17px; margin: 0; font-weight: 650; }
+.toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+button, .filebtn {
+  border: 1px solid var(--line); background: #fff; color: var(--fg);
+  padding: 6px 12px; border-radius: 7px; cursor: pointer; font-size: 13px;
+}
+button:hover, .filebtn:hover { border-color: var(--accent); color: var(--accent); }
+button.ghost { background: transparent; }
+select, input[type=date], input[type=number] {
+  padding: 5px 8px; border: 1px solid var(--line); border-radius: 7px; background: #fff; font-size: 13px;
+}
+.filebtn input { display: none; }
+.panel {
+  display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+  padding: 12px 20px; background: #fff; border-bottom: 1px solid var(--line);
+}
+.panel label { display: flex; gap: 6px; align-items: center; }
+.hint { color: var(--muted); font-size: 12px; }
+.hidden { display: none !important; }
+.banner {
+  margin: 12px 20px 0; padding: 10px 14px; border-radius: 8px; font-size: 13px;
+  background: #eef4ff; border: 1px solid #cfe0ff;
+}
+.banner.ok { background: #edfbf1; border-color: #bdeccb; }
+.banner.warn { background: #fff5e8; border-color: #ffd9a6; }
+main { padding: 16px 20px 40px; }
+
+.today { margin-bottom: 14px; }
+.today-title { font-weight: 650; margin-bottom: 6px; }
+.today-empty { color: var(--muted); padding: 8px 0; }
+.today-item {
+  display: flex; gap: 12px; align-items: baseline; padding: 7px 12px;
+  background: #fff; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px;
+}
+.today-item .time { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; }
+.today-item .meta { color: var(--muted); font-size: 12px; margin-left: auto; }
+
+.grid-wrap { overflow-x: auto; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+table.grid { border-collapse: collapse; width: 100%; min-width: 900px; table-layout: fixed; }
+.grid th, .grid td { border: 1px solid var(--line); vertical-align: top; }
+.grid thead th { padding: 8px 4px; font-size: 12px; background: #fafbfc; position: sticky; top: 0; }
+.grid thead th.weekend { color: #b04a2f; }
+.grid th.corner { width: 74px; }
+.grid tbody th.session {
+  width: 74px; font-weight: 500; font-size: 12px; background: #fafbfc; padding: 6px 4px;
+}
+.grid tbody th.session span { display: block; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.grid td { height: 58px; padding: 2px; position: relative; }
+.card {
+  position: absolute; left: 2px; right: 2px; top: 1px;
+  background: #f2f6fd; border-left: 3px solid var(--accent); border-radius: 5px;
+  padding: 4px 6px; overflow: hidden; font-size: 12px; line-height: 1.35;
+}
+.card b { display: block; font-weight: 600; font-size: 12px; }
+.card .room, .card .teacher { display: block; color: var(--muted); font-size: 11px; }
+
+.courses { margin-top: 22px; }
+.courses h2 { font-size: 14px; margin: 18px 0 8px; color: var(--muted); font-weight: 600; }
+.course-row {
+  background: #fff; border: 1px solid var(--line); border-radius: 9px;
+  padding: 9px 12px; margin-bottom: 7px;
+}
+.course-row .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+.course-row .dot.gray { background: #c3c9d2; }
+.course-row .meta { color: var(--muted); font-size: 12px; margin-left: 8px; }
+.course-row .slots { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.course-row .slots i {
+  font-style: normal; font-size: 11px; color: var(--muted);
+  background: var(--bg); border-radius: 5px; padding: 2px 7px;
+}

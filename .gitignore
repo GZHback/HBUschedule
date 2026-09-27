@@ -1,2 +1,9 @@
 .venv
 参考.jpg
+
+# 个人课表数据，不要提交（含学号对应的课程信息）
+settings.json
+schedule_out.json
+schedule_raw.json
+__pycache__/
+*.pyc
