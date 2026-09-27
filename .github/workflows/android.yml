@@ -12,10 +12,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
+
+      # runner 镜像默认只带到 android-36，Compose 1.12 要按 API 37 编译
+      - name: 补装 android-37 平台
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37"
+          ls "$ANDROID_HOME/platforms" | tail -5
 
       # 仓库里不放 gradle-wrapper.jar，CI 直接装固定版本的 Gradle
       - name: 安装 Gradle

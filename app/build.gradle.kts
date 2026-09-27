@@ -5,7 +5,8 @@ plugins {
 
 android {
     namespace = "cn.hbu.schedule"
-    compileSdk = 36
+    // Compose 1.12.x 要求按 API 37 编译，runner 上默认只到 36，CI 里显式补装
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "cn.hbu.schedule"
