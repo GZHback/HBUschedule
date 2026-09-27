@@ -79,6 +79,20 @@ class ScheduleParserTest {
     }
 
     @Test
+    fun `某天的课按起始节次排好序`() {
+        val monday = schedule.meetingsOn(day = 1, week = 1)
+        assertTrue(monday.isNotEmpty())
+        assertTrue(monday.zipWithNext().all { (a, b) -> a.second.firstSession <= b.second.firstSession })
+    }
+
+    @Test
+    fun `格子只写楼和教室，日历事件写完整地点`() {
+        val cad = schedule.meetingsOn(day = 2, week = 1).first { it.first.name == "工程制图与CAD" }.second
+        assertEquals("A3座 510", cad.placeLabel)
+        assertEquals("七一路校区 A3座 510", cad.location)
+    }
+
+    @Test
     fun `ics 用浮动本地时间且双周课步长为 2`() {
         val ics = IcsExporter.export(schedule, term)
         assertTrue(ics.startsWith("BEGIN:VCALENDAR"))

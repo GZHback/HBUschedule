@@ -29,10 +29,9 @@ object ScheduleParser {
                         lastSession = first + (tp.integer("continuingSession") ?: 1) - 1,
                         weeks = weeksOfClassWeek(tp.string("classWeek")),
                         weekDescription = tp.string("weekDescription").orEmpty().trim(),
-                        location = listOf("campusName", "teachingBuildingName", "classroomName")
-                            .map { tp.string(it).orEmpty().trim() }
-                            .filter { it.isNotEmpty() }
-                            .joinToString(" "),
+                        campus = tp.string("campusName").orEmpty().trim(),
+                        building = tp.string("teachingBuildingName").orEmpty().trim(),
+                        room = tp.string("classroomName").orEmpty().trim(),
                     )
                 }
                 courses += Course(
