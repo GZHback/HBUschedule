@@ -17,10 +17,13 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      # runner 镜像默认只带到 android-36，Compose 1.12 要按 API 37 编译
+      # runner 镜像默认只带到 android-36，Compose 1.12 与 AndroidX 1.19 要按 API 37 编译。
+      # API 37 在 SDK 仓库里的包名带次版本号（platforms;android-37.0），
+      # 这一步装不上也不拦后面 AGP 按 compileSdk 自行下载
       - name: 补装 android-37 平台
+        continue-on-error: true
         run: |
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0"
           ls "$ANDROID_HOME/platforms" | tail -5
 
       # 仓库里不放 gradle-wrapper.jar，CI 直接装固定版本的 Gradle
