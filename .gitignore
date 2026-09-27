@@ -1,2 +1,25 @@
+# 个人数据：学号对应的课表/成绩，绝不提交
+schedule_raw.json
+schedule_term.json
+schedule_out.json
+curriculum_page.html
+portal_dump.html
+captcha.png
+settings.json
+
+# 环境
 .venv
-参考.jpg
+__pycache__/
+*.pyc
+node_modules/
+
+# Android / Gradle
+.cxx
+.gradle
+*.iml
+local.properties
+app/build/
+build/
+captures/
+*.keystore
+*.jks
