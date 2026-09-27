@@ -39,6 +39,9 @@ object ScheduleParser {
                     name = info.string("courseName").orEmpty().trim(),
                     teacher = info.string("attendClassTeacher").orEmpty().trim(),
                     credits = info.string("unit")?.toDoubleOrNull() ?: 0.0,
+                    examType = info.string("examTypeName").orEmpty().trim(),
+                    category = info.string("courseCategoryName").orEmpty().trim(),
+                    property = info.string("coursePropertiesName").orEmpty().trim(),
                     meetings = meetings,
                 )
             }

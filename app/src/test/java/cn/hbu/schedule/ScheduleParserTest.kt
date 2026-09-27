@@ -79,6 +79,15 @@ class ScheduleParserTest {
     }
 
     @Test
+    fun `点课程弹的详情里那些字段都解析出来了`() {
+        val cad = course("工程制图与CAD")
+        assertEquals("考查", cad.examType)
+        assertEquals("任选", cad.property)
+        assertEquals("专业进阶课", cad.category)
+        assertEquals("第1-2 节", cad.meetings.first().sessionsLabel)
+    }
+
+    @Test
     fun `某天的课按起始节次排好序`() {
         val monday = schedule.meetingsOn(day = 1, week = 1)
         assertTrue(monday.isNotEmpty())

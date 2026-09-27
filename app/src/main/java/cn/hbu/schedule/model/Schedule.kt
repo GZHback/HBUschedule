@@ -16,6 +16,9 @@ data class Meeting(
     /** 格子里地方窄，只显示楼和教室 */
     val placeLabel: String
         get() = listOf(building, room).filter { it.isNotBlank() }.joinToString(" ")
+
+    val sessionsLabel: String
+        get() = if (firstSession == lastSession) "第$firstSession 节" else "第$firstSession-$lastSession 节"
 }
 
 data class Course(
@@ -23,6 +26,9 @@ data class Course(
     val name: String,
     val teacher: String,
     val credits: Double,
+    val examType: String = "",
+    val category: String = "",
+    val property: String = "",
     val meetings: List<Meeting>,
 )
 
