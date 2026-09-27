@@ -1,8 +1,6 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
-    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -47,8 +45,9 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    // 只做动态 JsonObject 解析，没有 @Serializable，所以不需要序列化编译器插件
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlin:kotlin-test:2.4.20")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:2.2.10")
 }
