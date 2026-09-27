@@ -182,17 +182,19 @@ async function main() {
     token = val('--token');
     proto = val('--proto', 'https');
   } else {
-    for (const u of [res.url, `${VPN}/`, `${VPN}/wengine-vpn/portal`]) {
-      if (!u || token) continue;
-      let html = '';
-      try { html = await text(await req(u)); } catch { continue; }
-      const hit = html.match(/v\.hbu\.cn\/(https?)\/([0-9a-zA-Z]{20,})\/[^\s"'<>]*(zhjw|教务|courseSelect)/i);
-      if (hit) { proto = hit[1]; token = hit[2]; console.log(`✓ 在门户页找到教务代理前缀`); break; }
-      fs.writeFileSync('portal_dump.html', html);
+    // A 串是按目标主机固定的，不是会话密钥：同一台机器上账密登录和 CAS 登录
+    // 拿到的 A 串一模一样，而且未登录直接 GET 内网域名，302 的 Location 里就带着它。
+    let loc = '';
+    try { loc = (await req('https://zhjw.hbu.cn/')).headers.get('location') || ''; } catch { /* 走下面的兜底 */ }
+    const hit = loc.match(/v\.hbu\.cn\/(https?)\/([0-9a-zA-Z]{20,})\//);
+    if (hit) {
+      proto = hit[1];
+      token = hit[2];
+      console.log(`✓ 从 zhjw.hbu.cn 的 302 跳转直接拿到教务代理前缀`);
     }
   }
   if (!token) {
-    console.log('✗ 没能自动找到教务系统的代理前缀(A 串)。门户页已存成 portal_dump.html。');
+    console.log('✗ 拿不到教务代理前缀(A 串)。');
     console.log('  在浏览器里打开教务系统，把地址栏 https://v.hbu.cn/https/<A串>/... 里的 <A串> 复制出来，再跑:');
     console.log('    node tools/capture-schedule.mjs --token <A串> --proto https');
     return;
@@ -211,16 +213,37 @@ async function main() {
     return;
   }
   const abs = callbackUrl.startsWith('http') ? callbackUrl : new URL(callbackUrl, base).href;
-  const raw = await text(await req(abs));
-  if (!raw.trim().startsWith('{') && !raw.trim().startsWith('[')) {
+  // 课表接口是 POST、空 body。WebVPN 会给 POST 地址追加 ?vpn-N-oM-<内网主机> 标记，
+  // 页面里没带就补一个再试。
+  const postJson = (u) => req(u, {
+    method: 'POST',
+    body: '',
+    headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest' },
+  }).then((r) => r.text());
+  const mark = curriculum.match(/vpn-\d+-o\d+-zhjw\.hbu\.cn/)?.[0] || 'vpn-12-o2-zhjw.hbu.cn';
+  let raw = '';
+  for (const u of [abs, `${abs}${abs.includes('?') ? '&' : '?'}${mark}`]) {
+    raw = await postJson(u);
+    if (raw.trim().startsWith('{')) break;
+  }
+  if (!raw.trim().startsWith('{')) {
     throw new Error(`接口返回不是 JSON（前 200 字）: ${raw.slice(0, 200)}`);
   }
-  const out = val('--out', 'schedule_raw.json');
-  fs.writeFileSync(out, JSON.stringify(JSON.parse(raw), null, 2));
   const data = JSON.parse(raw);
-  const n = Array.isArray(data.xkxx) ? data.xkxx.length : 0;
-  console.log(`✓ 已抓取 ${n} 门课，保存到 ${out}`);
-  console.log('  把这份文件发我就能定死节次表、周次文案和学期起点。');
+  const out = val('--out', 'schedule_raw.json');
+  fs.writeFileSync(out, JSON.stringify(data, null, 2));
+  const merged = Object.assign({}, ...(data.xkxx || []));
+  console.log(`✓ 已抓取 ${Object.keys(merged).length} 门课，保存到 ${out}`);
+
+  const meta = val('--meta', 'schedule_term.json');
+  try {
+    const sec = await postJson(`${base}/ajax/getSectionAndTime?${mark}`);
+    if (sec.trim().startsWith('{')) {
+      fs.writeFileSync(meta, JSON.stringify(JSON.parse(sec), null, 2));
+      console.log(`✓ 节次与学期元数据保存到 ${meta}`);
+    }
+  } catch { /* 元数据拿不到不影响课表 */ }
+  console.log('  注意：周次以 timeAndPlaceList[].classWeek 的 24 位 0/1 位图为准，别解析 weekDescription 文案。');
 }
 
 main().catch((e) => {
