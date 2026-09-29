@@ -2,7 +2,7 @@ package cn.hbu.schedule.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,8 +46,8 @@ import cn.hbu.schedule.model.Term
 import java.time.LocalDate
 
 private const val SESSION_COUNT = 11
-private val SlotHeight = 50.dp
-private val DayWidth = 78.dp
+private val SlotHeight = 70.dp
+private val BreakHeight = 24.dp
 private val TimeWidth = 50.dp
 private val HeaderHeight = 22.dp
 
@@ -60,7 +61,7 @@ private val CourseColors = listOf(
 fun ScheduleScreen(schedule: Schedule, term: Term) {
     val today = LocalDate.now()
     val thisWeek = term.weekOf(today)
-    var week by remember { mutableStateOf(thisWeek ?: 1) }
+    var week by remember { mutableIntStateOf(thisWeek ?: 1) }
     var selected by remember { mutableStateOf<Pair<Course, Meeting>?>(null) }
 
     Surface(color = MaterialTheme.colorScheme.background) {
@@ -91,29 +92,37 @@ fun ScheduleScreen(schedule: Schedule, term: Term) {
                 )
             }
 
+            // 表头：星期几固定在顶部
             Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp)) {
-                // 时间轴固定在左侧，只有课表格子横向滚动
-                Column(Modifier.width(TimeWidth)) {
-                    Spacer(Modifier.height(HeaderHeight))
-                    BellSchedule.sessions.forEach { session ->
-                        Column(Modifier.height(SlotHeight)) {
-                            Text("第 $session 节", fontSize = 9.sp, maxLines = 1, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(BellSchedule.startOf(session), fontSize = 9.sp, maxLines = 1, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
+                Spacer(Modifier.width(TimeWidth))
+                (1..7).forEach { day ->
+                    val isToday = day == today.dayOfWeek.value && week == thisWeek
+                    Text(
+                        text = BellSchedule.dayNames[day - 1],
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f).height(HeaderHeight),
+                    )
                 }
-                Row(Modifier.horizontalScroll(rememberScrollState())) {
-                    (1..7).forEach { day ->
-                        DayColumn(
-                            schedule = schedule,
-                            day = day,
-                            week = week,
-                            isToday = day == today.dayOfWeek.value && week == thisWeek,
-                            modifier = Modifier.width(DayWidth),
-                            onPick = { course, meeting -> selected = course to meeting },
-                        )
-                    }
-                }
+            }
+
+            // 课表主体：时间轴固定在左侧，整体上下滚动；4/5 节之间午休、8/9 节之间晚休
+            val onPick: (Course, Meeting) -> Unit = { course, meeting -> selected = course to meeting }
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 6.dp),
+            ) {
+                SessionRow(schedule, week, 1..4, onPick)
+                BreakDivider("午休")
+                SessionRow(schedule, week, 5..8, onPick)
+                BreakDivider("晚休")
+                SessionRow(schedule, week, 9..SESSION_COUNT, onPick)
             }
 
             UnscheduledSection(schedule)
@@ -130,26 +139,19 @@ private fun DayColumn(
     schedule: Schedule,
     day: Int,
     week: Int,
-    isToday: Boolean,
+    sessions: IntRange,
     modifier: Modifier = Modifier,
     onPick: (Course, Meeting) -> Unit,
 ) {
     Column(modifier.padding(horizontal = 2.dp)) {
-        Text(
-            text = BellSchedule.dayNames[day - 1],
-            fontSize = 12.sp,
-            maxLines = 1,
-            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-            color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.height(HeaderHeight),
-        )
-        Box(Modifier.fillMaxWidth().height(SlotHeight * SESSION_COUNT)) {
+        Box(Modifier.fillMaxWidth().height(SlotHeight * sessions.count())) {
             schedule.meetingsOn(day, week).forEach { (course, meeting) ->
-                val span = meeting.lastSession - meeting.firstSession + 1
+                if (meeting.firstSession !in sessions) return@forEach
+                val span = minOf(meeting.lastSession, sessions.last) - meeting.firstSession + 1
                 Column(
                     Modifier
                         .fillMaxWidth()
-                        .offset(y = SlotHeight * (meeting.firstSession - 1))
+                        .offset(y = SlotHeight * (meeting.firstSession - sessions.first))
                         .height(SlotHeight * span - 4.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(courseColor(course))
@@ -159,32 +161,91 @@ private fun DayColumn(
                 ) {
                     Text(
                         course.name,
-                        fontSize = 10.sp,
-                        lineHeight = 12.sp,
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color.White,
-                        maxLines = 2,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         course.teacher,
-                        fontSize = 9.sp,
-                        lineHeight = 11.sp,
+                        fontSize = 10.sp,
+                        lineHeight = 12.sp,
                         color = Color(0xE6FFFFFF),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Text(
-                        meeting.placeLabel,
-                        fontSize = 9.sp,
-                        lineHeight = 11.sp,
-                        color = Color(0xCCFFFFFF),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    if (meeting.building.isNotBlank()) {
+                        Text(
+                            meeting.building,
+                            fontSize = 10.sp,
+                            lineHeight = 12.sp,
+                            color = Color(0xCCFFFFFF),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (meeting.room.isNotBlank()) {
+                        Text(
+                            meeting.room,
+                            fontSize = 10.sp,
+                            lineHeight = 12.sp,
+                            color = Color(0xCCFFFFFF),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+/** 课表的一段：左侧时间轴 + 7 天格子，sessions 为该段包含的节次。 */
+@Composable
+private fun SessionRow(
+    schedule: Schedule,
+    week: Int,
+    sessions: IntRange,
+    onPick: (Course, Meeting) -> Unit,
+) {
+    Row(Modifier.fillMaxWidth()) {
+        Column(Modifier.width(TimeWidth)) {
+            sessions.forEach { session ->
+                Column(Modifier.height(SlotHeight)) {
+                    Text("第 $session 节", fontSize = 9.sp, maxLines = 1, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(BellSchedule.startOf(session), fontSize = 9.sp, maxLines = 1, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        (1..7).forEach { day ->
+            DayColumn(
+                schedule = schedule,
+                day = day,
+                week = week,
+                sessions = sessions,
+                modifier = Modifier.weight(1f),
+                onPick = onPick,
+            )
+        }
+    }
+}
+
+/** 上午/下午、下午/晚上之间的休整分隔条。 */
+@Composable
+private fun BreakDivider(label: String) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .height(BreakHeight)
+            .clip(RoundedCornerShape(6.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
