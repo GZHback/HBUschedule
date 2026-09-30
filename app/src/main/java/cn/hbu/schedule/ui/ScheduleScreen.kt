@@ -46,15 +46,22 @@ import cn.hbu.schedule.model.Term
 import java.time.LocalDate
 
 private const val SESSION_COUNT = 11
-private val SlotHeight = 70.dp
+private val SlotHeight = 65.dp //单元格格高
 private val BreakHeight = 24.dp
-private val TimeWidth = 50.dp
+private val TimeWidth = 35.dp
 private val HeaderHeight = 22.dp
 
 private val CourseColors = listOf(
-    Color(0xFF7E57C2), Color(0xFF26A69A), Color(0xFF5C6BC0), Color(0xFF66BB6A),
-    Color(0xFFEF5350), Color(0xFFEF6C00), Color(0xFF29B6F6), Color(0xFFAB47BC),
-    Color(0xFFEC407A), Color(0xFF7CB342),
+    Color(0xFFDC2626), // 红
+    Color(0xFFEA580C), // 橙
+    Color(0xFFB45309), // 琥珀
+    Color(0xFF059669), // 翠绿
+    Color(0xFF0D9488), // 青
+    Color(0xFF0284C7), // 天蓝
+    Color(0xFF2563EB), // 蓝
+    Color(0xFF4F46E5), // 靛蓝
+    Color(0xFF9333EA), // 紫
+    Color(0xFFDB2777), // 粉
 )
 
 @Composable
@@ -213,9 +220,30 @@ private fun SessionRow(
     Row(Modifier.fillMaxWidth()) {
         Column(Modifier.width(TimeWidth)) {
             sessions.forEach { session ->
-                Column(Modifier.height(SlotHeight)) {
-                    Text("第 $session 节", fontSize = 9.sp, maxLines = 1, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(BellSchedule.startOf(session), fontSize = 9.sp, maxLines = 1, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Column(
+                    Modifier.fillMaxWidth().height(SlotHeight),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        text = session.toString(),
+                        fontSize = 15.sp,
+                        lineHeight = 17.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = BellSchedule.startOf(session),
+                        fontSize = 9.sp,
+                        lineHeight = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = BellSchedule.endOf(session),
+                        fontSize = 9.sp,
+                        lineHeight = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
