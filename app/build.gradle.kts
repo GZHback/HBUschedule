@@ -48,6 +48,9 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     // 只做动态 JsonObject 解析，没有 @Serializable，所以不需要序列化编译器插件
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+    // WebView 登录 WebVPN 后，用 OkHttp 抓取课表
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlin:kotlin-test:2.2.10")
