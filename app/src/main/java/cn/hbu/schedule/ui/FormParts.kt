@@ -26,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -160,7 +159,7 @@ internal fun ChipRow(options: List<String>, selected: Set<Int>, onSelect: (Int) 
                     fontSize = if (options.size > 7) 11.sp else 13.sp,
                     maxLines = 1,
                     fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
-                    color = if (on) androidx.compose.ui.graphics.Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (on) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -183,7 +182,6 @@ internal fun FormField(
             placeholder = { Text(placeholder, fontSize = 14.sp) },
             singleLine = singleLine,
             modifier = Modifier.fillMaxWidth(),
-            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
         )
     }
 }

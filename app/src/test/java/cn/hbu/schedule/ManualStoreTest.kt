@@ -99,8 +99,9 @@ class ManualStoreTest {
 
     @Test
     fun `周次文案按选出来的周次拼`() {
-        assertEquals("第3-14周 双周", entry(weeks = (3..14 step 2).toList()).weekLabel)
-        assertEquals("第2-8周 单周", entry(weeks = (2..8 step 2).toList()).weekLabel)
+        // 3、5、7…是单周，止于 13
+        assertEquals("第3-13周 单周", entry(weeks = (3..14 step 2).toList()).weekLabel)
+        assertEquals("第2-8周 双周", entry(weeks = (2..8 step 2).toList()).weekLabel)
         assertEquals("第1-9周", entry(weeks = (1..9).toList()).weekLabel)
         assertEquals("第7周", entry(weeks = listOf(7)).weekLabel)
         assertEquals("", entry(weeks = emptyList()).weekLabel)

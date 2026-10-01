@@ -36,7 +36,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val prefs = remember { AppPrefs(LocalContext.current) }
+            val context = LocalContext.current
+            val prefs = remember(context) { AppPrefs(context) }
 
             // 抓来的原始 JSON、手动排的课、学期起点、上次读到的教务周次，四样各自存本机
             var rawSchedule by remember { mutableStateOf(prefs.readCache()) }
