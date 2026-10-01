@@ -167,6 +167,7 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
     var secret by remember { mutableStateOf("") }
     var oneTimeCode by remember { mutableStateOf("") }
     var revealSecret by remember { mutableStateOf(false) }
+    var panelOpen by remember { mutableStateOf(true) }
 
     // 抓取过程的逐步日志：抓不到时必须看得见每一步的真实 HTTP 码，否则只能靠猜
     val traceBuf = remember { StringBuilder() }
@@ -183,7 +184,8 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
      * 把原生框里的值一次写进登录页。
      *
      * 页面回来的只有「填了哪个字段、页面上有几个可用框」这类诊断，不含值本身；
-     * 学号和密码只经过这一次注入，不写日志也不落盘。
+     * 学号和密码只经过这一次注入，不写日志也不落盘。完整回执记进日志那块——它能滚动、
+     * 能长按复制，填不上时把那段发回来就够了。
      */
     fun fillIntoPage() {
         val view = web
@@ -194,7 +196,14 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
         view.evaluateJavascript(
             LoginInjector.script(LoginFields(account.trim(), secret, oneTimeCode.trim())),
         ) { raw ->
-            status = "填入结果：" + LoginInjector.decodeJs(raw.orEmpty())
+            val report = LoginInjector.decodeJs(raw.orEmpty())
+            traceLine("填入：$report")
+            if (report.startsWith("OK ")) {
+                panelOpen = false
+                status = "已填进页面，可以点页面里的「登录」了"
+            } else {
+                status = "没全填上，页面上有哪些框记在下方日志里"
+            }
         }
     }
 
@@ -308,40 +317,59 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
                 }
             }
             if (!ready) {
-                Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(
-                            value = account,
-                            onValueChange = { account = it },
-                            label = { Text("学号", fontSize = 12.sp) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                            modifier = Modifier.weight(1f),
-                        )
-                        OutlinedTextField(
-                            value = secret,
-                            onValueChange = { secret = it },
-                            label = { Text(if (revealSecret) "密码（明文）" else "密码", fontSize = 12.sp) },
-                            singleLine = true,
-                            visualTransformation =
-                                if (revealSecret) VisualTransformation.None else PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            modifier = Modifier.weight(1f).padding(start = 6.dp),
-                        )
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(
-                            value = oneTimeCode,
-                            onValueChange = { oneTimeCode = it },
-                            label = { Text("验证码（可留空）", fontSize = 12.sp) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                            modifier = Modifier.weight(1f),
-                        )
-                        TextButton(onClick = { revealSecret = !revealSecret }) {
-                            Text(if (revealSecret) "隐藏密码" else "显示密码", fontSize = 11.sp)
+                if (panelOpen) {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            OutlinedTextField(
+                                value = account,
+                                onValueChange = { account = it },
+                                label = { Text("学号", fontSize = 12.sp) },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                                modifier = Modifier.weight(1f),
+                            )
+                            OutlinedTextField(
+                                value = secret,
+                                onValueChange = { secret = it },
+                                label = { Text(if (revealSecret) "密码（明文）" else "密码", fontSize = 12.sp) },
+                                singleLine = true,
+                                visualTransformation =
+                                    if (revealSecret) VisualTransformation.None else PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                modifier = Modifier.weight(1f).padding(start = 6.dp),
+                            )
                         }
-                        TextButton(onClick = { fillIntoPage() }) { Text("填入页面", fontSize = 12.sp) }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            OutlinedTextField(
+                                value = oneTimeCode,
+                                onValueChange = { oneTimeCode = it },
+                                label = { Text("验证码/算术答案", fontSize = 12.sp) },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextButton(onClick = { revealSecret = !revealSecret }) {
+                                Text(if (revealSecret) "隐藏" else "显密码", fontSize = 11.sp)
+                            }
+                            TextButton(onClick = { fillIntoPage() }) { Text("填入", fontSize = 12.sp) }
+                            TextButton(onClick = { panelOpen = false }) { Text("收起", fontSize = 11.sp) }
+                        }
+                    }
+                } else {
+                    // 收起来把屏幕还给网页：登录按钮和验证码图都在页面里，挤着看不清
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "输入框已收起，要重填就展开",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = { panelOpen = true }) { Text("展开", fontSize = 12.sp) }
                     }
                 }
             }

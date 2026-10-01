@@ -87,7 +87,8 @@ object LoginInjector {
   // 页面里有 type=hidden 的 username（二次验证用），别靠尺寸判断把它当输入框
   var usable = visible.filter(function (el) { return lower(el.type) !== 'hidden'; });
   var ACCOUNT_NAMES = ['username', 'user_name', 'useraccount', 'account', 'user_id', 'jusername', 'uname', 'loginid', 'uid'];
-  var CODE_NAMES = ['captcha', 'captcha_code', 'verifycode', 'verify_code', 'sms_code', 'phone_code', 'code', 'dynamicpassword'];
+  var CODE_NAMES = ['captcha', 'captcha_code', 'captchaanswer', 'verifycode', 'verify_code', 'sms_code', 'phone_code', 'code', 'answer', 'dynamicpassword'];
+  var CODE_HINTS = ['验证码', '校验码', '算术', '答案', '计算', '图形码'];
   var TEXTY = ['text', 'email', 'tel', 'number'];
   var has = function (list, name) { return list.indexOf(name) >= 0; };
   var inText = function (el, words) {
@@ -104,11 +105,18 @@ object LoginInjector {
     return !inText(el, ['新密码', '再次']);
   };
   var isCode = function (el) {
-    return !isPassword(el) && (has(CODE_NAMES, fieldName(el)) || inText(el, ['验证码', '校验码']));
+    return !isPassword(el) && (has(CODE_NAMES, fieldName(el)) || inText(el, CODE_HINTS));
   };
   var tagOf = function (el) {
     var name = fieldName(el) || lower(el.id) || lower(el.type);
     return String(name).replace(/[^A-Za-z0-9_.-]/g, '').slice(0, 24) || 'input';
+  };
+  // 没找到某个框时，把页面上真实有哪些框列出来，否则下一轮只能靠猜
+  var describe = function (el) {
+    var hint = (attr(el, 'placeholder') || attr(el, 'aria-label') || '')
+        .replace(/["'\\\n\r]/g, '').slice(0, 12);
+    var key = String(fieldName(el) || el.id || '?').replace(/["'\\\n\r]/g, '').slice(0, 16);
+    return lower(el.type) + '[' + key + (hint ? ' ' + hint : '') + ']';
   };
   var fire = function (el, type) {
     if (typeof Event === 'function') { el.dispatchEvent(new Event(type, { bubbles: true })); }
@@ -155,7 +163,11 @@ object LoginInjector {
         + '先点一下页面，或改用「账号登录」那个标签';
   }
   var summary = visible.length + ' 个可用输入框，' + (filled.length ? '已填 ' + filled.join('、') : '一个都没填成');
-  if (missed.length) { summary = summary + '，没找到 ' + missed.join('、'); }
-  return summary;
+  if (missed.length) {
+    summary = summary + '，没找到 ' + missed.join('、') + '；这页面上的框：'
+        + usable.slice(0, 8).map(describe).join(' | ');
+  }
+  // 全填上了才带 OK 前缀，App 靠它决定要不要把输入面板收起来
+  return missed.length ? summary : 'OK ' + summary;
 })()""";
 }
