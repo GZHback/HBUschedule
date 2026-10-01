@@ -14,7 +14,7 @@ class ManualStoreTest {
     private fun entry(
         id: String = "m1",
         code: String = "",
-        name: String,
+        name: String = "样例课",
         day: Int = 3,
         first: Int = 5,
         last: Int = 6,
