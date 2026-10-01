@@ -21,10 +21,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,6 +39,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -154,6 +160,14 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
     var usedToken by remember { mutableStateOf<String?>(null) }
     var web by remember { mutableStateOf<WebView?>(null) }
 
+    // 学号和密码在原生输入框里打，打完整段一次性注入页面。
+    // 登录页逐键重写 input.value，光标被甩回最左边，打 2025 出来是 5202；粘贴没这问题，
+    // 注入走的就是粘贴那条路径，所以绕开键盘事件。
+    var account by remember { mutableStateOf("") }
+    var secret by remember { mutableStateOf("") }
+    var oneTimeCode by remember { mutableStateOf("") }
+    var revealSecret by remember { mutableStateOf(false) }
+
     // 抓取过程的逐步日志：抓不到时必须看得见每一步的真实 HTTP 码，否则只能靠猜
     val traceBuf = remember { StringBuilder() }
     var log by remember { mutableStateOf("") }
@@ -163,6 +177,25 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
             traceBuf.toString()
         }
         ui.post { log = snapshot }
+    }
+
+    /**
+     * 把原生框里的值一次写进登录页。
+     *
+     * 页面回来的只有「填了哪个字段、页面上有几个可用框」这类诊断，不含值本身；
+     * 学号和密码只经过这一次注入，不写日志也不落盘。
+     */
+    fun fillIntoPage() {
+        val view = web
+        if (view == null) {
+            status = "登录页还没建好，等一下再点填入"
+            return
+        }
+        view.evaluateJavascript(
+            LoginInjector.script(LoginFields(account.trim(), secret, oneTimeCode.trim())),
+        ) { raw ->
+            status = "填入结果：" + LoginInjector.decodeJs(raw.orEmpty())
+        }
     }
 
     fun finish(json: String) {
@@ -272,6 +305,44 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
                 )
                 if (failed) {
                     TextButton(onClick = { retry() }) { Text("重试", fontSize = 12.sp) }
+                }
+            }
+            if (!ready) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = account,
+                            onValueChange = { account = it },
+                            label = { Text("学号", fontSize = 12.sp) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                            modifier = Modifier.weight(1f),
+                        )
+                        OutlinedTextField(
+                            value = secret,
+                            onValueChange = { secret = it },
+                            label = { Text(if (revealSecret) "密码（明文）" else "密码", fontSize = 12.sp) },
+                            singleLine = true,
+                            visualTransformation =
+                                if (revealSecret) VisualTransformation.None else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            modifier = Modifier.weight(1f).padding(start = 6.dp),
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = oneTimeCode,
+                            onValueChange = { oneTimeCode = it },
+                            label = { Text("验证码（可留空）", fontSize = 12.sp) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = { revealSecret = !revealSecret }) {
+                            Text(if (revealSecret) "隐藏密码" else "显示密码", fontSize = 11.sp)
+                        }
+                        TextButton(onClick = { fillIntoPage() }) { Text("填入页面", fontSize = 12.sp) }
+                    }
                 }
             }
             if (log.isNotEmpty()) {
