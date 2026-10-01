@@ -82,9 +82,26 @@ private val CAPTURE_CLIENT = vpnHttpClient()
  */
 private class Capture {
     @Volatile var delivered = false
-    @Volatile var attempts = 0
     @Volatile var seen = 0
     @Volatile var diag: String? = null
+
+    /** 一次只允许一个抓取在跑；登录过程中页面会连续跳转，每次都该再试一遍 */
+    @Volatile var fetching = false
+
+    /** 同一页上给几次预算；换到新页面说明会话又往前走了一步，预算重新给 */
+    @Volatile var attempts = 0
+
+    /** 影子请求（shouldInterceptRequest 里那次重放）自己的次数，别和抓取预算混用 */
+    @Volatile var shadowTries = 0
+
+    /** 总共不超过这么多次，避免一直空跑 */
+    @Volatile var total = 0
+
+    /** 上一次触发抓取的页面地址，用来判断"是不是换了一页" */
+    @Volatile var lastUrl: String? = null
+
+    /** 最近一次用的 A 串，延迟重试时沿用 */
+    @Volatile var lastToken: String? = null
 
     /** 页面真实发过的 callback URL（kbzq.py 就是靠观测它拿到 B 串的） */
     @Volatile var observed: String? = null
@@ -92,6 +109,12 @@ private class Capture {
     /** 观测到真实 URL 后只自动重试一次，避免死循环 */
     @Volatile var autoRetried = false
 }
+
+/** 同一页上最多试这么几次：登录是一路跳转过去的，第几跳才建好会话并不确定 */
+private const val TRY_PER_PAGE = 3
+
+/** 整场登录加起来的上限，防止一直空跑 */
+private const val TRY_TOTAL = 12
 
 private class CaptureResult(val json: String?, val diag: String?)
 
@@ -151,11 +174,13 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
     val cap = remember { Capture() }
     val scope = rememberCoroutineScope()
 
-    var status by remember { mutableStateOf("正在打开登录页…") }
+    var status by remember {
+        mutableStateOf("在下面的页面点「统一认证」→「登录」；学号密码可以先在上面框里打好，点「填入」")
+    }
     var failed by remember { mutableStateOf(false) }
     var ready by remember { mutableStateOf(false) }
     var loggedIn by remember { mutableStateOf(false) }
-    var asked by remember { mutableStateOf(false) }
+    var showLog by remember { mutableStateOf(false) }
     var token by remember { mutableStateOf<String?>(null) }
     var usedToken by remember { mutableStateOf<String?>(null) }
     var web by remember { mutableStateOf<WebView?>(null) }
@@ -184,13 +209,13 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
      * 把原生框里的值一次写进登录页。
      *
      * 页面回来的只有「填了哪个字段、页面上有几个可用框」这类诊断，不含值本身；
-     * 学号和密码只经过这一次注入，不写日志也不落盘。完整回执记进日志那块——它能滚动、
-     * 能长按复制，填不上时把那段发回来就够了。
+     * 学号和密码只经过这一次注入，不写日志也不落盘。完整回执记进日志（默认收着，
+     * 点「细节」能看、能长按复制），填不上时把那段发回来就够了。
      */
     fun fillIntoPage() {
         val view = web
         if (view == null) {
-            status = "登录页还没建好，等一下再点填入"
+            status = "登录页还没打开，稍等一下再点填入"
             return
         }
         view.evaluateJavascript(
@@ -200,9 +225,9 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
             traceLine("填入：$report")
             if (report.startsWith("OK ")) {
                 panelOpen = false
-                status = "已填进页面，可以点页面里的「登录」了"
+                status = "已经帮你填好了，点页面里的「登录」就行"
             } else {
-                status = "没全填上，页面上有哪些框记在下方日志里"
+                status = "没全填上，剩下那个在页面里直接输就行"
             }
         }
     }
@@ -218,19 +243,33 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
         }
     }
 
-    /** 抓取主路径：和 capture-schedule.mjs 一样，纯 HTTP，不看页面 JS 有没有执行 */
+    /** 预算用完了：这一页试够 3 次，或者整场登录试够 12 次 */
+    fun outOfBudget() = cap.attempts >= TRY_PER_PAGE || cap.total >= TRY_TOTAL
+
+    /**
+     * 抓取主路径：和 capture-schedule.mjs 一样，纯 HTTP，不看页面 JS 有没有执行。
+     *
+     * 登录是一路跳转过去的（CAS → WebVPN → 资源页 → 教务），会话到底第几跳才建好并不确定，
+     * 所以这不是一次性动作：每换一页重新给一份预算，同一页上失败就隔 2.5 秒再试。
+     * 早先只试一次，而且是在 CAS 页上就把第一轮发掉了，失败后非得让人手动点「重新登录」不可。
+     */
     fun fetchDirectly(knownToken: String?) {
-        if (asked || ready) return
-        asked = true
+        // 没登录成就别抢跑，那时会话还没建好，跑了也一定失败，还白占预算
+        if (!loggedIn || ready || cap.delivered || cap.fetching) return
+        if (outOfBudget()) return
+        cap.fetching = true
+        cap.attempts += 1
+        cap.total += 1
         usedToken = knownToken
-        status = "登录成功，正在直取课表…"
+        cap.lastToken = knownToken
+        status = "正在自动抓课表…"
         scope.launch {
             delay(700.milliseconds) // 等 CAS / WebVPN 把会话 cookie 落盘
             try {
                 val cookies = CookieManager.getInstance().getCookie(VPN).orEmpty()
                 traceLine(
-                    "v.hbu.cn cookie " +
-                        if (cookies.isBlank()) "为空（登录态没拿到）" else "已取到 ${cookies.length} 字符"
+                    "第 ${cap.total} 试：v.hbu.cn cookie " +
+                        if (cookies.isBlank()) "为空（登录态还没拿到）" else "已取到 ${cookies.length} 字符"
                 )
                 val json = WebVpnClient(
                     cookieHeader = cookies,
@@ -243,18 +282,34 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
                 ui.post {
                     failed = true
                     cap.diag = e.message
-                    status = "直取课表失败，细节见下方日志。也可在页面里手动点「选课管理 → 本学期课表」兜底"
+                    status = if (outOfBudget()) {
+                        "自动抓取没成功，你在页面里点进「选课管理 → 本学期课表」也能拿到"
+                    } else {
+                        "还没抓到，你在页面里点进「教务系统」，我这边会再试"
+                    }
+                    // 用户可能停在这一页不动，隔一会儿自己再试，不用他动手
+                    if (!outOfBudget()) {
+                        ui.postDelayed({ fetchDirectly(cap.lastToken) }, 2500)
+                    }
                 }
+            } finally {
+                cap.fetching = false
             }
         }
     }
 
+    /** 每次主框架跳转都重新判断一遍：会话可能就是这几跳之间建好的 */
     fun navigate(view: WebView, rawUrl: String?) {
         if (ready || rawUrl == null) return
+        if (rawUrl != cap.lastUrl) {
+            // 换了一页说明往前走了一步，这一页的预算重新给
+            cap.lastUrl = rawUrl
+            cap.attempts = 0
+        }
 
         // 已经看到教务代理地址，A 串直接拿来用，省掉 zhjw.hbu.cn 的探测
         val hit = A_PATTERN.find(rawUrl)
-        if (hit != null && !asked) {
+        if (hit != null) {
             token = hit.groupValues[2]
             fetchDirectly(hit.groupValues[2])
             return
@@ -266,23 +321,29 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
             loggedIn = false // 回到登录页说明还没登录成功
             return
         }
-        if (!loggedIn && !asked) {
+        if (!loggedIn) {
             loggedIn = true
+            // 登录都过了，输入框没用了，把屏幕还给页面
+            panelOpen = false
+            status = "登录好了，正在抓课表"
             // 顺带把教务系统首页也打开，直取失败时用户还能手动操作
             view.loadUrl(JW_HOME)
             fetchDirectly(null)
+            return
         }
+        fetchDirectly(token)
     }
 
+    /** 手动「再试一次」：预算整个清零 */
     fun retry() {
         failed = false
-        asked = false
         cap.diag = null
         cap.attempts = 0
+        cap.total = 0
         synchronized(traceBuf) { traceBuf.setLength(0) }
         log = ""
         if (loggedIn) {
-            status = "正在重试…"
+            status = "正在再试一次…"
             fetchDirectly(token)
         } else {
             status = "正在重新打开登录页…"
@@ -313,7 +374,14 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
                     modifier = Modifier.weight(1f),
                 )
                 if (failed) {
-                    TextButton(onClick = { retry() }) { Text("重试", fontSize = 12.sp) }
+                    TextButton(onClick = { retry() }) { Text("再试一次", fontSize = 12.sp) }
+                }
+                // 那堆 A 串、HTTP 码对用户没用，默认不显示；但要留着，
+                // 出问题时点开、长按复制就能发回来，不用来回描述
+                if (log.isNotEmpty()) {
+                    TextButton(onClick = { showLog = !showLog }) {
+                        Text(if (showLog) "收起细节" else "细节", fontSize = 11.sp)
+                    }
                 }
             }
             if (!ready) {
@@ -373,7 +441,7 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
                     }
                 }
             }
-            if (log.isNotEmpty()) {
+            if (showLog && log.isNotEmpty()) {
                 Box(
                     Modifier
                         .fillMaxWidth()
@@ -417,7 +485,6 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
                                 val a = hit.groupValues[2]
                                 if (a == usedToken) return
                                 failed = false
-                                asked = false
                                 token = a
                                 fetchDirectly(a)
                             }
@@ -447,8 +514,8 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
                                         ui.post { retry() }
                                     }
                                 }
-                                if (cap.attempts >= 3) return null
-                                cap.attempts += 1
+                                if (cap.shadowTries >= 3) return null
+                                cap.shadowTries += 1
                                 Thread {
                                     val r = shadowFetch(view, request)
                                     val json = r.json
