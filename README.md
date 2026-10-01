@@ -29,6 +29,7 @@
 - Kotlin + Jetpack Compose，`minSdk 26`（Android 8.0 起），`compileSdk 37`
 - 零后端：WebView 登录网瑞达 WebVPN，CAS 统一认证、企业微信扫码、图形验证码都交给网页自己处理，App 不碰登录协议
 - 登录后不再依赖页面 JS：从 WebView 取到会话 cookie，用 OkHttp 按「代理前缀 → 课表页 → callback」纯 HTTP 直取青果 URP 接口，失败时回落到 WebView 手动操作
+- 学号/密码/验证码在 App 自己的输入框里打，点「填入页面」一次注入（等价于粘贴）：登录页逐键输入时会重写输入框内容，光标被甩回最左边，打 `2025` 出来是 `5202`，而粘贴不受影响
 - 命令行脚本走的是另一条路：`v.hbu.cn` 的 `auth_type=local` 学号密码登录（撞上图形验证码时把图片存下来人工读），只用于验证接口，不打包进 App
 - 周次以接口返回的 `timeAndPlaceList[].classWeek` **24 位 0/1 位图**为准，不解析中文周次文案
 - 节次共 11 节：上午 1-4、下午 5-8、晚上 9-11，第 1 节 08:20-09:05
