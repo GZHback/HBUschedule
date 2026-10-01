@@ -37,8 +37,8 @@ class TermSettingsTest {
     fun `本学期按核对过的起点算`() {
         val term = TermSettings(anchor, 20).toTerm()
         // 教务页面在 2026-09-28 显示「第 5 周 星期一」，起点就按这个核对出来的
-        assertEquals(5, term.weekOf(LocalDate.of(2026, 9, 28)))
-        assertEquals(5, term.weekOf(LocalDate.of(2026, 10, 1)))
+        assertEquals(5, term.weekOf(LocalDate.of(2026, 9, 28)) ?: -1)
+        assertEquals(5, term.weekOf(LocalDate.of(2026, 10, 1)) ?: -1)
         assertEquals(1, term.weekNumber(LocalDate.of(2026, 8, 31)))
     }
 
@@ -90,8 +90,8 @@ class TermSettingsTest {
         // 教务说 10月1日 是第 6 周，我们算的是第 5 周：那它的起点比我们早一周
         val calibration = Calibration.between(SchoolWeekHint(6, today), settings, today)
         assertNotNull(calibration)
-        assertEquals(6, calibration?.schoolWeek)
-        assertEquals(5, calibration?.ourWeek)
+        assertEquals(6, calibration?.schoolWeek ?: -1)
+        assertEquals(5, calibration?.ourWeek ?: -1)
         assertEquals(anchor.minusWeeks(1), calibration?.week1Monday)
 
         // 提示放久了不该再来烦人
