@@ -19,30 +19,40 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cn.hbu.schedule.data.AppPrefs
+import cn.hbu.schedule.data.Calibration
+import cn.hbu.schedule.data.ManualStore
 import cn.hbu.schedule.data.ScheduleParser
-import cn.hbu.schedule.model.Term
+import cn.hbu.schedule.data.SchoolWeekHint
 import cn.hbu.schedule.ui.LoginScreen
 import cn.hbu.schedule.ui.ScheduleScreen
-import java.io.File
 import java.time.LocalDate
-
-private const val CACHE_FILE = "schedule_cache.json"
-
-// 学期起点先写死，后续从 /ajax/getSectionAndTime 元数据解析
-private val TERM = Term(LocalDate.of(2026, 8, 31), 20)
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            var rawSchedule by remember { mutableStateOf(readCache()) }
+            val prefs = remember { AppPrefs(LocalContext.current) }
+
+            // 抓来的原始 JSON、手动排的课、学期起点、上次读到的教务周次，四样各自存本机
+            var rawSchedule by remember { mutableStateOf(prefs.readCache()) }
+            var settings by remember { mutableStateOf(prefs.termSettings()) }
+            var manualEntries by remember { mutableStateOf(prefs.manualEntries()) }
+            var hint by remember { mutableStateOf(prefs.schoolWeekHint()) }
 
             Surface(color = MaterialTheme.colorScheme.background) {
                 val cached = rawSchedule
                 if (cached != null) {
+                    val schedule = remember(cached, manualEntries) {
+                        ManualStore.merged(ScheduleParser.parse(cached), manualEntries)
+                    }
+                    val calibration = remember(hint, settings) {
+                        Calibration.between(hint, settings, LocalDate.now())
+                    }
                     Column(Modifier.fillMaxSize()) {
                         Row(
                             Modifier
@@ -61,30 +71,46 @@ class MainActivity : ComponentActivity() {
                                 Text("重新登录刷新", fontSize = 11.sp)
                             }
                         }
-                        ScheduleScreen(ScheduleParser.parse(cached), TERM)
+                        ScheduleScreen(
+                            schedule = schedule,
+                            term = settings.toTerm(),
+                            settings = settings,
+                            manualEntries = manualEntries,
+                            calibration = calibration,
+                            onSaveManual = { entry ->
+                                // 同一个 id 就是改那条，新 id 才是加一条
+                                manualEntries = if (manualEntries.any { it.id == entry.id }) {
+                                    manualEntries.map { if (it.id == entry.id) entry else it }
+                                } else {
+                                    manualEntries + entry
+                                }
+                                prefs.saveManualEntries(manualEntries)
+                            },
+                            onDeleteManual = { id ->
+                                manualEntries = manualEntries.filterNot { it.id == id }
+                                prefs.saveManualEntries(manualEntries)
+                            },
+                            onSaveTerm = { newSettings ->
+                                settings = newSettings
+                                hint = null
+                                prefs.saveTermSettings(newSettings)
+                                prefs.clearSchoolWeekHint()
+                            },
+                        )
                     }
                 } else {
                     // 登录 + 抓取都在 WebView 内完成，直接拿到 callback 原始 JSON
-                    LoginScreen { raw ->
-                        writeCache(raw)
+                    LoginScreen { raw, schoolWeek ->
+                        prefs.writeCache(raw)
+                        if (schoolWeek != null) {
+                            val fresh = SchoolWeekHint(schoolWeek, LocalDate.now())
+                            hint = fresh
+                            prefs.saveSchoolWeekHint(fresh)
+                        }
                         rawSchedule = raw
                     }
                 }
             }
-        }
-    }
-
-    private fun readCache(): String? = try {
-        val f = File(filesDir, CACHE_FILE)
-        if (f.exists()) f.readText() else null
-    } catch (_: Exception) {
-        null
-    }
-
-    private fun writeCache(raw: String) {
-        try {
-            File(filesDir, CACHE_FILE).writeText(raw)
-        } catch (_: Exception) {
         }
     }
 }

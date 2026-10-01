@@ -166,10 +166,12 @@ private fun shadowFetch(web: WebView, request: WebResourceRequest): CaptureResul
  * 登录成功后不再依赖页面 JS，而是照 `tools/capture-schedule.mjs` 的链路纯 HTTP 直取：
  * A 串 -> 课表页 HTML -> B 串 + vpn 标记 -> POST callback -> 课表 JSON。
  * 直取失败时保留 WebView 供手动操作，并用 [WebViewClient.shouldInterceptRequest] 兜底捕获。
+ *
+ * [onReady] 第二个参数是从课表页 HTML 里读到的「教务自己标的当前周次」，读不到为 null。
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun LoginScreen(onReady: (rawJson: String) -> Unit) {
+fun LoginScreen(onReady: (rawJson: String, schoolWeek: Int?) -> Unit) {
     val ui = remember { Handler(Looper.getMainLooper()) }
     val cap = remember { Capture() }
     val scope = rememberCoroutineScope()
@@ -232,14 +234,14 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
         }
     }
 
-    fun finish(json: String) {
+    fun finish(json: String, schoolWeek: Int? = null) {
         ui.post {
             if (ready) return@post
             ready = true
             cap.delivered = true
             failed = false
             status = "已抓到课表"
-            onReady(json)
+            onReady(json, schoolWeek)
         }
     }
 
@@ -271,12 +273,13 @@ fun LoginScreen(onReady: (rawJson: String) -> Unit) {
                     "第 ${cap.total} 试：v.hbu.cn cookie " +
                         if (cookies.isBlank()) "为空（登录态还没拿到）" else "已取到 ${cookies.length} 字符"
                 )
-                val json = WebVpnClient(
+                val client = WebVpnClient(
                     cookieHeader = cookies,
                     token = knownToken,
                     preferredCallback = cap.observed,
-                ).fetchSchedule { line -> traceLine(line) }
-                finish(json)
+                )
+                val json = client.fetchSchedule { line -> traceLine(line) }
+                finish(json, client.schoolWeek)
             } catch (e: Exception) {
                 traceLine("× " + (e.message ?: "未知错误"))
                 ui.post {

@@ -1,5 +1,6 @@
 package cn.hbu.schedule.network
 
+import cn.hbu.schedule.data.SchoolWeekProbe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -90,6 +91,14 @@ class WebVpnClient(
 
     private val cookie: String = cookieHeader
 
+    /**
+     * 课表页 HTML 里教务自己标的当前周次，抓取过程中顺带读出来的。
+     * 读不到就是 null —— 页面可能根本没渲染这个数，这时学期起点继续用学生自己设的值。
+     */
+    @Volatile
+    var schoolWeek: Int? = null
+        private set
+
     private val client: OkHttpClient =
         vpnHttpClient(OkHttpClient.Builder().followRedirects(false))
 
@@ -113,6 +122,12 @@ class WebVpnClient(
         if (html.isBlank()) {
             throw IllegalStateException("课表页返回空内容，WebVPN 登录态可能已失效，请重新登录")
         }
+
+        schoolWeek = SchoolWeekProbe.detect(html)
+        trace(
+            "教务页面的当前周次：" +
+                (schoolWeek?.let { "第 $it 周" } ?: "页面里没读到，周次继续按「学期设置」算")
+        )
 
         val b = B_FIELD.find(html)?.groupValues?.get(1)
         trace("课表页里的 B 串：" + (b ?: "没出现（B 只出现在 callback 请求 URL 里，属正常）"))
