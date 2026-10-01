@@ -1,5 +1,7 @@
 # 个人数据：学号对应的课表/成绩，绝不提交
-schedule_out.json
+# 挡的是 capture-schedule.mjs 的默认产物：--out schedule_raw.json、--meta schedule_term.json
+# 通配是为了连自定义文件名一起挡掉，docs/sample_raw_schedule.json（测试样例）不受影响
+schedule_*.json
 curriculum_page.html
 portal_dump.html
 captcha.png
