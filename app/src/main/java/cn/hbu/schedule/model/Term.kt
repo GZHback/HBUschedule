@@ -8,10 +8,12 @@ import java.time.LocalDate
  */
 data class Term(val week1Monday: LocalDate, val totalWeeks: Int = 20) {
 
-    fun weekOf(date: LocalDate): Int? {
-        val week = Math.floorDiv(date.toEpochDay() - week1Monday.toEpochDay(), 7L).toInt() + 1
-        return if (week in 1..totalWeeks) week else null
-    }
+    /** 不管在不在学期内都算一个数：界面上要说清「按这个起点，今天落在第几周」 */
+    fun weekNumber(date: LocalDate): Int =
+        Math.floorDiv(date.toEpochDay() - week1Monday.toEpochDay(), 7L).toInt() + 1
+
+    /** 学期外（寒暑假、起点设错）返回 null，让界面能如实说「今天不在本学期里」 */
+    fun weekOf(date: LocalDate): Int? = weekNumber(date).takeIf { it in 1..totalWeeks }
 
     fun dateOf(day: Int, week: Int): LocalDate = week1Monday.plusDays((week - 1) * 7L + (day - 1))
 }

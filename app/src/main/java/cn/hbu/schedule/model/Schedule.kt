@@ -9,6 +9,8 @@ data class Meeting(
     val campus: String = "",
     val building: String = "",
     val room: String = "",
+    /** 手动排的课带着它那条记录的 id，点详情才认得出该删谁；教务抓来的为 null */
+    val manualId: String? = null,
 ) {
     val location: String
         get() = listOf(campus, building, room).filter { it.isNotBlank() }.joinToString(" ")
