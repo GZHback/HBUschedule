@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.HBUSchedule" parent="@android:style/Theme.Material.Light.NoActionBar" />
+    <style name="Theme.HBUSchedule" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <!-- 页面底是浅灰，状态栏图标得换成深色：不然时间是白色的，压在同色背景上看不见 -->
+        <item name="android:statusBarColor">@color/page</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/page</item>
+    </style>
 </resources>

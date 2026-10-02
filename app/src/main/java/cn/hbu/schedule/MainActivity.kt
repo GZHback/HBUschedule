@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -27,6 +26,7 @@ import cn.hbu.schedule.data.Calibration
 import cn.hbu.schedule.data.ManualStore
 import cn.hbu.schedule.data.ScheduleParser
 import cn.hbu.schedule.data.SchoolWeekHint
+import cn.hbu.schedule.ui.Ios
 import cn.hbu.schedule.ui.LoginScreen
 import cn.hbu.schedule.ui.ScheduleScreen
 import java.time.LocalDate
@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
             var manualEntries by remember { mutableStateOf(prefs.manualEntries()) }
             var hint by remember { mutableStateOf(prefs.schoolWeekHint()) }
 
-            Surface(color = MaterialTheme.colorScheme.background) {
+            Surface(color = Ios.Page) {
                 val cached = rawSchedule
                 if (cached != null) {
                     val schedule = remember(cached, manualEntries) {
@@ -54,22 +54,24 @@ class MainActivity : ComponentActivity() {
                     val calibration = remember(hint, settings) {
                         Calibration.between(hint, settings, LocalDate.now())
                     }
-                    Column(Modifier.fillMaxSize()) {
+                    // 状态栏高度只在这里扣一次：之前这里和 ScheduleScreen 各扣一遍，顶部多出一条空白
+                    Column(
+                        Modifier
+                            .fillMaxSize()
+                            .statusBarsPadding(),
+                    ) {
                         Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .statusBarsPadding()
-                                .padding(horizontal = 12.dp, vertical = 2.dp),
+                            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
                                 "本地缓存课表，可能不是最新",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 13.sp,
+                                color = Ios.SecondaryLabel,
                                 modifier = Modifier.weight(1f),
                             )
                             TextButton(onClick = { rawSchedule = null }) {
-                                Text("重新登录刷新", fontSize = 11.sp)
+                                Text("重新登录刷新", fontSize = 15.sp, color = Ios.Tint)
                             }
                         }
                         ScheduleScreen(

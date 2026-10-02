@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 和 ui/Design.kt 里 Ios.Page 是同一个数，改一处要改两处 -->
+    <color name="page">#F2F2F7</color>
+</resources>
