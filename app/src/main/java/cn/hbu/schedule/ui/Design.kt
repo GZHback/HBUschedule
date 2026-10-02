@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -96,7 +97,7 @@ internal fun courseColor(course: Course): Color = courseColorOf(course.code)
 
 /** 一张 iOS 那种圆角白卡片，里面放一组列表行 */
 @Composable
-internal fun GroupCard(content: @Composable () -> Unit) {
+internal fun GroupCard(content: @Composable ColumnScope.() -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
