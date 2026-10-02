@@ -30,6 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cn.hbu.schedule.model.BellSchedule
+import java.time.LocalDate
 
 /**
  * 表单弹窗共用的几块：整屏表单骨架、左右调节一行、单选条、输入框。
@@ -206,3 +208,9 @@ internal fun FormSectionTitle(text: String) {
         modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 2.dp),
     )
 }
+
+/** 中文日期短写，界面上到处要用，别每个文件抄一遍 */
+internal fun monthDay(date: LocalDate): String = "${date.monthValue}月${date.dayOfMonth}日"
+
+/** 周一 .. 周日，和 BellSchedule.dayNames 的编号一致（DayOfWeek 周一就是 1） */
+internal fun weekdayName(date: LocalDate): String = BellSchedule.dayNames[date.dayOfWeek.value - 1]

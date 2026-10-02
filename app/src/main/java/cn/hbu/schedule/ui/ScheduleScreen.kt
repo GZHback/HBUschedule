@@ -49,6 +49,8 @@ import cn.hbu.schedule.model.Term
 import java.time.LocalDate
 
 private const val SESSION_COUNT = 11
+private const val TAB_TODAY = 0
+private const val TAB_WEEK = 1
 private val SlotHeight = 65.dp //单元格格高
 private val BreakHeight = 24.dp
 private val TimeWidth = 35.dp
@@ -83,6 +85,7 @@ fun ScheduleScreen(
 ) {
     val today = LocalDate.now()
     val thisWeek = term.weekOf(today)
+    var tab by remember { mutableIntStateOf(TAB_TODAY) }
     var week by remember(settings.week1Monday, settings.totalWeeks, thisWeek) {
         mutableIntStateOf(thisWeek ?: 1)
     }
@@ -96,125 +99,141 @@ fun ScheduleScreen(
         Surface(color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding()) {
                 Row(
-                    Modifier.fillMaxWidth().padding(start = 12.dp, end = 6.dp, top = 6.dp),
+                    Modifier.fillMaxWidth().padding(start = 10.dp, end = 4.dp, top = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("河北大学", style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                    TabChip("今天", tab == TAB_TODAY) { tab = TAB_TODAY }
+                    TabChip("课表", tab == TAB_WEEK) { tab = TAB_WEEK }
                     Spacer(Modifier.weight(1f))
-                    Text(
-                        "◀",
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { week = (week - 1).coerceAtLeast(1) }.padding(10.dp),
-                    )
-                    Text(
-                        text = "第 $week 周" + if (week == thisWeek) " · 本周" else "",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.widthIn(min = 104.dp),
-                    )
-                    Text(
-                        "▶",
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .clickable { week = (week + 1).coerceAtMost(term.totalWeeks) }
-                            .padding(10.dp),
-                    )
-                }
-
-                Row(
-                    Modifier.fillMaxWidth().padding(start = 12.dp, end = 6.dp, bottom = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "${monthDay(term.dateOf(1, week))} - ${monthDay(term.dateOf(7, week))}",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        modifier = Modifier.weight(1f),
-                    )
-                    TextButton(onClick = { termOpen = true }) {
-                        Text("学期设置", fontSize = 13.sp)
-                    }
+                    TextButton(onClick = { termOpen = true }) { Text("学期设置", fontSize = 13.sp) }
                     TextButton(onClick = { draft = ManualDraft(null, null) }) {
                         Text("＋ 加课", fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
                     }
                 }
 
-                if (thisWeek == null) {
-                    val offset = term.weekNumber(today)
-                    NoticeBar(
-                        text = "今天 ${monthDay(today)} 不在本学期第 1-${term.totalWeeks} 周里" +
-                            (
-                                if (offset < 1) "（第 1 周还没到）"
-                                else "（按 ${monthDay(term.week1Monday)} 起算已经是第 $offset 周）"
-                                ) +
-                            "，格子先按第 1 周画 —— 点开「学期设置」核对",
-                        onClick = { termOpen = true },
-                    )
-                }
-                calibration?.let { info ->
-                    NoticeBar(
-                        text = "上次抓课表时，教务页面自己写着 ${monthDay(info.detectedOn)} 是第 ${info.schoolWeek} 周，" +
-                            "我们算的是${if (info.ourWeek == null) "不在本学期里" else "第 ${info.ourWeek} 周"} —— 点进去可以按教务的改",
-                        onClick = { termOpen = true },
+                if (tab == TAB_TODAY) {
+                    TodayColumn(
+                        schedule = schedule,
+                        term = term,
+                        today = today,
+                        thisWeek = thisWeek,
+                        onOpenTerm = { termOpen = true },
+                        onOpenWeek = { tab = TAB_WEEK },
+                        modifier = Modifier.weight(1f),
                     )
                 }
 
-                // 表头：星期几固定在顶部
-                Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp)) {
-                    Spacer(Modifier.width(TimeWidth))
-                    (1..7).forEach { day ->
-                        val isToday = day == today.dayOfWeek.value && week == thisWeek
+                if (tab == TAB_WEEK) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(start = 12.dp, end = 6.dp, top = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Spacer(Modifier.weight(1f))
                         Text(
-                            text = BellSchedule.dayNames[day - 1],
-                            fontSize = 12.sp,
+                            "◀",
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable { week = (week - 1).coerceAtLeast(1) }.padding(10.dp),
+                        )
+                        Text(
+                            text = "第 $week 周" + if (week == thisWeek) " · 本周" else "",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
-                            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.weight(1f).height(HeaderHeight),
+                            modifier = Modifier.widthIn(min = 104.dp),
                         )
+                        Text(
+                            "▶",
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .clickable { week = (week + 1).coerceAtMost(term.totalWeeks) }
+                                .padding(10.dp),
+                        )
+                        Spacer(Modifier.weight(1f))
                     }
-                }
 
-                // 课表主体：时间轴固定在左侧，整体上下滚动；4/5 节之间午休、8/9 节之间晚休
-                val onPick: (Course, Meeting) -> Unit = { course, meeting -> selected = course to meeting }
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 6.dp),
-                ) {
-                    SessionRow(schedule, week, 1..4, onPick)
-                    BreakDivider("午休")
-                    SessionRow(schedule, week, 5..8, onPick)
-                    BreakDivider("晚休")
-                    SessionRow(schedule, week, 9..SESSION_COUNT, onPick)
+                    Text(
+                        "${monthDay(term.dateOf(1, week))} - ${monthDay(term.dateOf(7, week))}",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth().padding(start = 12.dp, bottom = 2.dp),
+                    )
 
-                    val unscheduled = schedule.courses.filter { it.meetings.isEmpty() }
-                    if (unscheduled.isNotEmpty()) {
-                        UnscheduledSection(
-                            courses = unscheduled,
-                            open = unscheduledOpen,
-                            onToggle = { unscheduledOpen = !unscheduledOpen },
-                            onSchedule = { draft = ManualDraft(it, null) },
+                    if (thisWeek == null) {
+                        val offset = term.weekNumber(today)
+                        NoticeBar(
+                            text = "今天 ${monthDay(today)} 不在本学期第 1-${term.totalWeeks} 周里" +
+                                (
+                                    if (offset < 1) "（第 1 周还没到）"
+                                    else "（按 ${monthDay(term.week1Monday)} 起算已经是第 $offset 周）"
+                                    ) +
+                                "，格子先按第 1 周画 —— 点开「学期设置」核对",
+                            onClick = { termOpen = true },
                         )
                     }
-                    if (manualEntries.isNotEmpty()) {
-                        ManualSection(
-                            entries = manualEntries,
-                            open = manualOpen,
-                            onToggle = { manualOpen = !manualOpen },
-                            onEdit = { draft = ManualDraft(schedule.courses.firstOrNull { c -> c.code == it.courseCode }, it) },
-                            onDelete = { onDeleteManual(it.id) },
+                    calibration?.let { info ->
+                        NoticeBar(
+                            text = "上次抓课表时，教务页面自己写着 ${monthDay(info.detectedOn)} 是第 ${info.schoolWeek} 周，" +
+                                "我们算的是${if (info.ourWeek == null) "不在本学期里" else "第 ${info.ourWeek} 周"} —— 点进去可以按教务的改",
+                            onClick = { termOpen = true },
                         )
                     }
-                    Spacer(Modifier.height(10.dp))
+
+                    // 表头：星期几固定在顶部
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp)) {
+                        Spacer(Modifier.width(TimeWidth))
+                        (1..7).forEach { day ->
+                            val isToday = day == today.dayOfWeek.value && week == thisWeek
+                            Text(
+                                text = BellSchedule.dayNames[day - 1],
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.weight(1f).height(HeaderHeight),
+                            )
+                        }
+                    }
+
+                    // 课表主体：时间轴固定在左侧，整体上下滚动；4/5 节之间午休、8/9 节之间晚休
+                    val onPick: (Course, Meeting) -> Unit = { course, meeting -> selected = course to meeting }
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 6.dp),
+                    ) {
+                        SessionRow(schedule, week, 1..4, onPick)
+                        BreakDivider("午休")
+                        SessionRow(schedule, week, 5..8, onPick)
+                        BreakDivider("晚休")
+                        SessionRow(schedule, week, 9..SESSION_COUNT, onPick)
+
+                        val unscheduled = schedule.courses.filter { it.meetings.isEmpty() }
+                        if (unscheduled.isNotEmpty()) {
+                            UnscheduledSection(
+                                courses = unscheduled,
+                                open = unscheduledOpen,
+                                onToggle = { unscheduledOpen = !unscheduledOpen },
+                                onSchedule = { draft = ManualDraft(it, null) },
+                            )
+                        }
+                        if (manualEntries.isNotEmpty()) {
+                            ManualSection(
+                                entries = manualEntries,
+                                open = manualOpen,
+                                onToggle = { manualOpen = !manualOpen },
+                                onEdit = { draft = ManualDraft(schedule.courses.firstOrNull { c -> c.code == it.courseCode }, it) },
+                                onDelete = { onDeleteManual(it.id) },
+                            )
+                        }
+                        Spacer(Modifier.height(10.dp))
+                    }
                 }
             }
         }
@@ -389,7 +408,7 @@ private fun BreakDivider(label: String) {
 
 /** 周次、学期对不上这类事，说在课表格子上面，别塞进设置页里 */
 @Composable
-private fun NoticeBar(text: String, onClick: () -> Unit) {
+internal fun NoticeBar(text: String, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -598,7 +617,28 @@ private fun ManualSection(
     }
 }
 
-private fun courseColor(course: Course): Color =
+internal fun courseColor(course: Course): Color =
     CourseColors[course.code.hashCode().mod(CourseColors.size)]
 
-private fun monthDay(date: LocalDate): String = "${date.monthValue}月${date.dayOfMonth}日"
+/** 顶部两个标签：今天 / 课表。用现成的 Box 手搓，不引 TabRow（那要 Experimental API） */
+@Composable
+private fun TabChip(label: String, selected: Boolean, onSelect: () -> Unit) {
+    Box(
+        Modifier
+            .padding(end = 6.dp)
+            .clip(RoundedCornerShape(9.dp))
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                else Color.Transparent
+            )
+            .clickable(onClick = onSelect)
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+    ) {
+        Text(
+            label,
+            fontSize = 16.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
