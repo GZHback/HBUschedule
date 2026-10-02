@@ -2,11 +2,11 @@ package cn.hbu.schedule.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,12 +33,11 @@ import cn.hbu.schedule.model.BellSchedule
 import java.time.LocalDate
 
 /**
- * 表单弹窗共用的几块：整屏表单骨架、左右调节一行、单选条、输入框。
+ * 排课表单和学期设置表单共用的几块。
  *
- * 整屏而不是AlertDialog：格子要放 7 个选项、又要调节次和周次，对话框那点高度只能把字压小，
- * 而「显示文字很小」正是要修的问题。
+ * 表单是整屏而不是对话框：格子要放 7 个星期选项、又要调节次和周次，
+ * 对话框那点高度只能把字压小，而「显示文字很小」正是要修的问题。
  */
-
 @Composable
 internal fun FormScaffold(
     title: String,
@@ -49,53 +47,38 @@ internal fun FormScaffold(
     onCancel: () -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(Modifier.fillMaxSize(), color = Ios.Page) {
         Column(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
             Row(
-                Modifier.fillMaxWidth().padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 4.dp),
+                Modifier.fillMaxWidth().padding(start = 8.dp, end = 4.dp, top = 6.dp, bottom = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    title,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(onClick = onCancel) { Text("返回", fontSize = 14.sp) }
+                TextButton(onClick = onCancel) { Text("取消", fontSize = Ios.Body, color = Ios.Tint) }
+                Spacer(Modifier.weight(1f))
+                Text(title, fontSize = Ios.Title, fontWeight = FontWeight.SemiBold, color = Ios.Label)
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = onSave) {
+                    Text(
+                        confirmLabel,
+                        fontSize = Ios.Body,
+                        fontWeight = if (canSave) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (canSave) Ios.Tint else Ios.TertiaryLabel,
+                    )
+                }
             }
             Column(
                 Modifier
                     .weight(1f)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 14.dp),
+                    .padding(horizontal = Ios.GapEdge),
                 content = content,
             )
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TextButton(onClick = onCancel) { Text("取消", fontSize = 14.sp) }
-                TextButton(onClick = onSave) {
-                    Text(
-                        confirmLabel,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (canSave) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                        },
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                    )
-                }
-            }
         }
     }
 }
 
-/** 「节次 第 5 节 14:30-15:15」这种一行两向调节，沿用课表表头的 ◀ ▶ */
+/** 「第 5 节 14:30」这种一行两向调节 */
 @Composable
 internal fun StepperRow(
     label: String,
@@ -108,32 +91,33 @@ internal fun StepperRow(
         Modifier.fillMaxWidth().padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(label, fontSize = Ios.Subhead, color = Ios.SecondaryLabel)
         Box(Modifier.weight(1f))
         Text(
             "◀",
-            fontSize = 15.sp,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clickable(onClick = onMinus).padding(horizontal = 10.dp, vertical = 6.dp),
+            fontSize = Ios.Body,
+            color = Ios.Tint,
+            modifier = Modifier.clickable(onClick = onMinus).padding(horizontal = 12.dp, vertical = 8.dp),
         )
         Text(
             value,
-            fontSize = 15.sp,
+            fontSize = Ios.Body,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
+            color = Ios.Label,
             modifier = Modifier.widthIn(min = 96.dp),
         )
         Text(
             "▶",
-            fontSize = 15.sp,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clickable(onClick = onPlus).padding(horizontal = 10.dp, vertical = 6.dp),
+            fontSize = Ios.Body,
+            color = Ios.Tint,
+            modifier = Modifier.clickable(onClick = onPlus).padding(horizontal = 12.dp, vertical = 8.dp),
         )
     }
     if (hint.isNotBlank()) {
         Row(Modifier.fillMaxWidth()) {
             Box(Modifier.weight(1f))
-            Text(hint, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(hint, fontSize = Ios.Footnote, color = Ios.TertiaryLabel)
         }
     }
 }
@@ -148,20 +132,18 @@ internal fun ChipRow(options: List<String>, selected: Set<Int>, onSelect: (Int) 
                 Modifier
                     .weight(1f)
                     .padding(horizontal = 2.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(
-                        if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-                    )
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(if (on) Color(0x1F007AFFL) else Ios.Card)
                     .clickable { onSelect(index) }
-                    .padding(vertical = 9.dp),
+                    .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     label,
-                    fontSize = if (options.size > 7) 11.sp else 13.sp,
+                    fontSize = if (options.size > 7) Ios.Footnote else Ios.Subhead,
                     maxLines = 1,
-                    fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
-                    color = if (on) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = if (on) FontWeight.Medium else FontWeight.Normal,
+                    color = if (on) Ios.Tint else Ios.Label,
                 )
             }
         }
@@ -177,11 +159,11 @@ internal fun FormField(
     singleLine: Boolean = true,
 ) {
     Column(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
-        Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(label, fontSize = Ios.Footnote, color = Ios.SecondaryLabel)
         OutlinedTextField(
             value = value,
             onValueChange = onChange,
-            placeholder = { Text(placeholder, fontSize = 14.sp) },
+            placeholder = { Text(placeholder, fontSize = Ios.Subhead, color = Ios.TertiaryLabel) },
             singleLine = singleLine,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -192,9 +174,9 @@ internal fun FormField(
 internal fun FormHint(text: String) {
     Text(
         text,
-        fontSize = 13.sp,
+        fontSize = Ios.Footnote,
         lineHeight = 18.sp,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = Ios.SecondaryLabel,
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
     )
 }
@@ -203,9 +185,10 @@ internal fun FormHint(text: String) {
 internal fun FormSectionTitle(text: String) {
     Text(
         text,
-        fontSize = 15.sp,
-        fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 2.dp),
+        fontSize = Ios.Subhead,
+        fontWeight = FontWeight.Medium,
+        color = Ios.Label,
+        modifier = Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 2.dp),
     )
 }
 

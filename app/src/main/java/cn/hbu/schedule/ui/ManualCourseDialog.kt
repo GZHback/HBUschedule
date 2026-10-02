@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -109,7 +108,7 @@ fun ManualCourseDialog(
             Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Text(name, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                 if (teacher.isNotBlank()) {
-                    Text("老师 $teacher", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("老师 $teacher", fontSize = 14.sp, color = Ios.SecondaryLabel)
                 }
             }
         }
@@ -171,7 +170,7 @@ fun ManualCourseDialog(
         Text(
             if (noWeeks) "这个区间里没有符合条件的周，换一下起止周" else "上这些周：${weeks.joinToString(",")} 共 ${weeks.size} 周",
             fontSize = 13.sp,
-            color = if (noWeeks) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (noWeeks) Ios.Destructive else Ios.SecondaryLabel,
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         )
 

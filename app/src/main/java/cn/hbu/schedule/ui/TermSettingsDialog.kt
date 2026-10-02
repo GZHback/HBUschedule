@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -61,7 +60,7 @@ fun TermSettingsDialog(
                         "而我们按现在的设置算出的是${info.ourWeek?.let { "第 $it 周" } ?: "不在本学期里"}。",
                     fontSize = 14.sp,
                     lineHeight = 19.sp,
-                    color = MaterialTheme.colorScheme.error,
+                    color = Ios.Destructive,
                 )
                 TextButton(onClick = { monday = info.week1Monday }) {
                     Text("按教务的改成 ${monthDay(info.week1Monday)}", fontSize = 14.sp)
@@ -109,7 +108,7 @@ fun TermSettingsDialog(
             fontSize = 15.sp,
             lineHeight = 21.sp,
             fontWeight = FontWeight.SemiBold,
-            color = if (thisWeek == null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+            color = if (thisWeek == null) Ios.Destructive else Ios.Tint,
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         )
 

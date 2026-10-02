@@ -44,6 +44,9 @@ dependencies {
     implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.compose.ui:ui")
+    // 页面切换的 Crossfade、折叠区的 animateContentSize、分段控件白块滑动
+    implementation("androidx.compose.animation:animation")
+    implementation("androidx.compose.animation:animation-core")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-tooling-preview")
     // 只做动态 JsonObject 解析，没有 @Serializable，所以不需要序列化编译器插件
