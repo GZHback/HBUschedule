@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cn.hbu.schedule.data.Calibration
 import cn.hbu.schedule.data.TermSettings
-import cn.hbu.schedule.model.BellSchedule
 import cn.hbu.schedule.model.Term
 import java.time.LocalDate
 
@@ -74,7 +73,7 @@ fun TermSettingsDialog(
         Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
             TextButton(onClick = { monday = monday.minusWeeks(1) }) { Text("◀ 一周", fontSize = 14.sp) }
             Text(
-                "${monday.year}年${monday.monthValue}月${monday.dayOfMonth}日 · ${dayName(monday)}",
+                "${monday.year}年${monday.monthValue}月${monday.dayOfMonth}日 · ${weekdayName(monday)}",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f),
@@ -103,9 +102,9 @@ fun TermSettingsDialog(
         )
         Text(
             if (thisWeek == null) {
-                "今天 ${monthDay(today)} · ${dayName(today)}：不在第 1-$weeks 周里（课表会提示这一点，格子按第 1 周显示）"
+                "今天 ${monthDay(today)} · ${weekdayName(today)}：不在第 1-$weeks 周里（课表会提示这一点，格子按第 1 周显示）"
             } else {
-                "今天 ${monthDay(today)} · ${dayName(today)}：第 $thisWeek 周"
+                "今天 ${monthDay(today)} · ${weekdayName(today)}：第 $thisWeek 周"
             },
             fontSize = 15.sp,
             lineHeight = 21.sp,
@@ -126,7 +125,3 @@ private fun rangeLabel(term: Term, week: Int): String {
     val end = term.dateOf(7, week)
     return "${monthDay(start)} - ${monthDay(end)}"
 }
-
-private fun monthDay(date: LocalDate): String = "${date.monthValue}月${date.dayOfMonth}日"
-
-private fun dayName(date: LocalDate): String = BellSchedule.dayNames[date.dayOfWeek.value - 1]
