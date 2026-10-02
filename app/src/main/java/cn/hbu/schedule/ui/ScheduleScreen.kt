@@ -293,7 +293,7 @@ private fun WeekPage(
             if (manualEntries.isNotEmpty()) {
                 ManualSection(entries = manualEntries, onEdit = onEditManual, onDelete = onDeleteManual)
             }
-            Footnote("格子只有几十 dp 宽，放不下老师 —— 点一节看教师、学分、考核和完整周次。")
+            Footnote("点一节看学分、考核和完整周次。")
             Spacer(Modifier.height(12.dp))
         }
     }
@@ -335,15 +335,38 @@ private fun DayColumn(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (bottom - top + 1 > 1 && meeting.placeLabel.isNotBlank()) {
+                    if (course.teacher.isNotBlank()) {
                         Text(
-                            meeting.placeLabel,
+                            course.teacher,
                             fontSize = 10.sp,
                             lineHeight = 12.sp,
                             color = Color(0xD9FFFFFF),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
+                    }
+                    // 地点分两行：先写楼（A*座），再写教室
+                    if (bottom - top + 1 > 1) {
+                        if (meeting.building.isNotBlank()) {
+                            Text(
+                                meeting.building,
+                                fontSize = 10.sp,
+                                lineHeight = 12.sp,
+                                color = Color(0xD9FFFFFF),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        if (meeting.room.isNotBlank()) {
+                            Text(
+                                meeting.room,
+                                fontSize = 10.sp,
+                                lineHeight = 12.sp,
+                                color = Color(0xD9FFFFFF),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                 }
             }
