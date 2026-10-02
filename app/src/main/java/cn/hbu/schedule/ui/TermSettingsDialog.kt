@@ -33,6 +33,7 @@ fun TermSettingsDialog(
     calibration: Calibration?,
     onSave: (TermSettings) -> Unit,
     onDismiss: () -> Unit,
+    onRelogin: () -> Unit,
 ) {
     var monday by remember { mutableStateOf(settings.week1Monday) }
     var weeks by remember { mutableIntStateOf(settings.totalWeeks) }
@@ -116,6 +117,15 @@ fun TermSettingsDialog(
             "注意：周次对上了，不代表今天一定上课。国庆、放假补课、周六上周一的课这些调休，" +
                 "教务接口里没有，我们读不到，只能你自己知道今天到底上不上。"
         )
+
+        FormSectionTitle("课表来源")
+        FormHint("现在这张课表是本地缓存的，可能不是最新。想拿教务最新的，就重新登录抓一次。")
+        TextButton(
+            onClick = onRelogin,
+            modifier = Modifier.padding(bottom = 14.dp),
+        ) {
+            Text("重新登录刷新", fontSize = 15.sp, color = Ios.Tint)
+        }
     }
 }
 

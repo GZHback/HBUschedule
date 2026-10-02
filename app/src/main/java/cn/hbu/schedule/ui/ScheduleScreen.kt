@@ -69,6 +69,7 @@ fun ScheduleScreen(
     onSaveManual: (ManualEntry) -> Unit,
     onDeleteManual: (String) -> Unit,
     onSaveTerm: (TermSettings) -> Unit,
+    onRelogin: () -> Unit,
 ) {
     val today = LocalDate.now()
     val thisWeek = term.weekOf(today)
@@ -148,6 +149,7 @@ fun ScheduleScreen(
                 calibration = calibration,
                 onSave = { onSaveTerm(it) },
                 onDismiss = { termOpen = false },
+                onRelogin = onRelogin,
             )
         }
 
@@ -332,7 +334,7 @@ private fun DayColumn(
                         lineHeight = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color.White,
-                        maxLines = 2,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                     )
                     if (course.teacher.isNotBlank()) {
@@ -596,7 +598,7 @@ private fun ManualSection(
                     ListRow(
                         title = entry.courseName,
                         subtitle = subtitle,
-                        accent = courseColorOf(entry.courseKey),
+                        accent = courseColorOf(entry.scheduleCode),
                         trailing = {
                             Row {
                                 TextButton(onClick = { onEdit(entry) }) {

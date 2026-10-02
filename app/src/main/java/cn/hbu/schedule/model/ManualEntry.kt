@@ -27,6 +27,13 @@ data class ManualEntry(
     val courseKey: String
         get() = courseCode.ifBlank { courseName.trim() }
 
+    /**
+     * 并进课表后那门课的课程号。[ManualStore.merged] 按它建课，配色也照它取，
+     * 所以管理列表的色条和格子里的颜色是同一个。
+     */
+    val scheduleCode: String
+        get() = if (isStandalone) STANDALONE_CODE_PREFIX + courseName.trim() else courseCode
+
     /** 手动排的课没有 weekDescription，按选出来的周次自己拼一句给人看 */
     val weekLabel: String
         get() = when {
@@ -57,6 +64,9 @@ data class ManualEntry(
     )
 
     companion object {
+
+        /** 自建课并进课表后的课程号前缀，和 [ManualStore] 建出来的课一致 */
+        const val STANDALONE_CODE_PREFIX = "manual:"
 
         /** 起始、结束、步长拼成周次列表；步长 2 就是从 [start] 起隔周 */
         fun weeksInRange(start: Int, end: Int, step: Int = 1): List<Int> {

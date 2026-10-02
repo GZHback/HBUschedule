@@ -4,31 +4,26 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import cn.hbu.schedule.data.AppPrefs
 import cn.hbu.schedule.data.Calibration
 import cn.hbu.schedule.data.ManualStore
 import cn.hbu.schedule.data.ScheduleParser
 import cn.hbu.schedule.data.SchoolWeekHint
 import cn.hbu.schedule.ui.Ios
+import cn.hbu.schedule.ui.LocalCourseColors
 import cn.hbu.schedule.ui.LoginScreen
 import cn.hbu.schedule.ui.ScheduleScreen
+import cn.hbu.schedule.ui.courseColorMap
 import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
@@ -54,52 +49,45 @@ class MainActivity : ComponentActivity() {
                     val calibration = remember(hint, settings) {
                         Calibration.between(hint, settings, LocalDate.now())
                     }
+                    // 一门课一个色：按整张课表统一配色，色板够用时门门不同
+                    val courseColors = remember(schedule) {
+                        courseColorMap(schedule.courses.map { it.code })
+                    }
                     // 状态栏高度只在这里扣一次：之前这里和 ScheduleScreen 各扣一遍，顶部多出一条空白
-                    Column(
-                        Modifier
-                            .fillMaxSize()
-                            .statusBarsPadding(),
-                    ) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                    CompositionLocalProvider(LocalCourseColors provides courseColors) {
+                        Column(
+                            Modifier
+                                .fillMaxSize()
+                                .statusBarsPadding(),
                         ) {
-                            Text(
-                                "本地缓存课表，可能不是最新",
-                                fontSize = 13.sp,
-                                color = Ios.SecondaryLabel,
-                                modifier = Modifier.weight(1f),
+                            ScheduleScreen(
+                                schedule = schedule,
+                                term = settings.toTerm(),
+                                settings = settings,
+                                manualEntries = manualEntries,
+                                calibration = calibration,
+                                onSaveManual = { entry ->
+                                    // 同一个 id 就是改那条，新 id 才是加一条
+                                    manualEntries = if (manualEntries.any { it.id == entry.id }) {
+                                        manualEntries.map { if (it.id == entry.id) entry else it }
+                                    } else {
+                                        manualEntries + entry
+                                    }
+                                    prefs.saveManualEntries(manualEntries)
+                                },
+                                onDeleteManual = { id ->
+                                    manualEntries = manualEntries.filterNot { it.id == id }
+                                    prefs.saveManualEntries(manualEntries)
+                                },
+                                onSaveTerm = { newSettings ->
+                                    settings = newSettings
+                                    hint = null
+                                    prefs.saveTermSettings(newSettings)
+                                    prefs.clearSchoolWeekHint()
+                                },
+                                onRelogin = { rawSchedule = null },
                             )
-                            TextButton(onClick = { rawSchedule = null }) {
-                                Text("重新登录刷新", fontSize = 15.sp, color = Ios.Tint)
-                            }
                         }
-                        ScheduleScreen(
-                            schedule = schedule,
-                            term = settings.toTerm(),
-                            settings = settings,
-                            manualEntries = manualEntries,
-                            calibration = calibration,
-                            onSaveManual = { entry ->
-                                // 同一个 id 就是改那条，新 id 才是加一条
-                                manualEntries = if (manualEntries.any { it.id == entry.id }) {
-                                    manualEntries.map { if (it.id == entry.id) entry else it }
-                                } else {
-                                    manualEntries + entry
-                                }
-                                prefs.saveManualEntries(manualEntries)
-                            },
-                            onDeleteManual = { id ->
-                                manualEntries = manualEntries.filterNot { it.id == id }
-                                prefs.saveManualEntries(manualEntries)
-                            },
-                            onSaveTerm = { newSettings ->
-                                settings = newSettings
-                                hint = null
-                                prefs.saveTermSettings(newSettings)
-                                prefs.clearSchoolWeekHint()
-                            },
-                        )
                     }
                 } else {
                     // 登录 + 抓取都在 WebView 内完成，直接拿到 callback 原始 JSON

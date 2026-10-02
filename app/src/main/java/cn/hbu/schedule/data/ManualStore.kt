@@ -91,10 +91,10 @@ object ManualStore {
             }
         }
 
-        byKey.filterKeys { it !in matched }.forEach { (key, group) ->
+        byKey.filterKeys { it !in matched }.forEach { (_, group) ->
             val first = group.first()
             courses += Course(
-                code = if (key.startsWith(STANDALONE_PREFIX)) "manual:${first.courseName}" else key,
+                code = first.scheduleCode,
                 name = first.courseName.ifBlank { "未命名课程" },
                 teacher = first.teacher,
                 credits = 0.0,

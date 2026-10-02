@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,20 +80,38 @@ object Ios {
  */
 private val CourseColors = listOf(
     Color(0xFFCB454E), // 砖红
-    Color(0xFFA4652E), // 橙
-    Color(0xFF817525), // 金
-    Color(0xFF508125), // 橄榄绿
-    Color(0xFF258445), // 森绿
     Color(0xFF25817B), // 青绿
     Color(0xFF317AAD), // 湖蓝
+    Color(0xDDFF9800), // 橙
     Color(0xFF5C6CD1), // 靛蓝
+    Color(0xFFE7D100), // 金
     Color(0xFF9058D0), // 紫
     Color(0xFFC83C94), // 玫红
+    Color(0xFF4CAF50), // 绿
+
 )
 
-/** 同一门课每次拿到的颜色必须一样，格子、今天页、色条全靠课程号 */
-internal fun courseColorOf(key: String): Color = CourseColors[key.hashCode().mod(CourseColors.size)]
+/**
+ * 把整张课表的课程号摊成「一门课一个色」：色板够用时保证门门不同，
+ * 只有课数超过色数才从头轮回。键排过序，所以重开 App、换周都不会变色。
+ */
+internal fun courseColorMap(keys: Collection<String>): Map<String, Color> =
+    keys.map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .distinct()
+        .sorted()
+        .withIndex()
+        .associate { (index, key) -> key to CourseColors[index % CourseColors.size] }
 
+/** 由课表页按当前整张课表挂上去；没挂到时退回按哈希取色，同一门课每次仍一样 */
+internal val LocalCourseColors = staticCompositionLocalOf<Map<String, Color>> { emptyMap() }
+
+/** 同一门课每次拿到的颜色必须一样，格子、今天页、色条全靠课程号 */
+@Composable
+internal fun courseColorOf(key: String): Color =
+    LocalCourseColors.current[key] ?: CourseColors[key.hashCode().mod(CourseColors.size)]
+
+@Composable
 internal fun courseColor(course: Course): Color = courseColorOf(course.code)
 
 /** 一张 iOS 那种圆角白卡片，里面放一组列表行 */
