@@ -54,7 +54,7 @@ private const val TAB_WEEK = 1
 /** 一格多高、时间轴多宽：整屏都按这两个数排 */
 private val SlotHeight = 65.dp
 private val TimeWidth = 38.dp
-private val HeaderHeight = 24.dp
+private val HeaderHeight = 38.dp
 
 /** 打开排课表单时带上的是谁：course 为空表示完全自建，entry 非空表示在改一条已有的 */
 private data class ManualDraft(val course: Course?, val entry: ManualEntry?)
@@ -231,14 +231,6 @@ private fun WeekPage(
                     .padding(10.dp),
             )
         }
-        Text(
-            "${monthDay(term.dateOf(1, week))} - ${monthDay(term.dateOf(7, week))}",
-            fontSize = Ios.Footnote,
-            color = Ios.SecondaryLabel,
-            maxLines = 1,
-            modifier = Modifier.fillMaxWidth().padding(start = Ios.GapEdge, bottom = 6.dp),
-        )
-
         if (thisWeek == null) {
             val weeksIn = term.weekNumber(today)
             NoticeBar(
@@ -263,15 +255,27 @@ private fun WeekPage(
             Spacer(Modifier.width(TimeWidth))
             (1..7).forEach { day ->
                 val isToday = day == today.dayOfWeek.value && week == thisWeek
-                Text(
-                    text = BellSchedule.dayNames[day - 1],
-                    fontSize = Ios.Footnote,
-                    maxLines = 1,
-                    fontWeight = if (isToday) FontWeight.SemiBold else FontWeight.Normal,
-                    color = if (isToday) Ios.Label else Ios.SecondaryLabel,
-                    textAlign = TextAlign.Center,
+                val date = term.dateOf(day, week)
+                Column(
                     modifier = Modifier.weight(1f).height(HeaderHeight),
-                )
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        text = BellSchedule.dayNames[day - 1],
+                        fontSize = Ios.Footnote,
+                        maxLines = 1,
+                        fontWeight = if (isToday) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (isToday) Ios.Tint else Ios.SecondaryLabel,
+                    )
+                    Text(
+                        text = "${date.monthValue}/${date.dayOfMonth}",
+                        fontSize = Ios.Caption,
+                        maxLines = 1,
+                        fontWeight = if (isToday) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (isToday) Ios.Tint else Ios.TertiaryLabel,
+                    )
+                }
             }
         }
 
