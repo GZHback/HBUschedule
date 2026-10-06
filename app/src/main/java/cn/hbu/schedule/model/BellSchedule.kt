@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 咕杼 及 HBUschedule 项目其他贡献者
+// 本文件遵循 GPL-3.0-or-later 发布，条款见仓库根目录 LICENSE（本程序无担保）。
 package cn.hbu.schedule.model
 
 /** 河北大学作息表，取自教务课表页面渲染出的真实时间，共 11 节。 */

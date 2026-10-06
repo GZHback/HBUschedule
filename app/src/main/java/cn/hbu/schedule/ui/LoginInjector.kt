@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 咕杼 及 HBUschedule 项目其他贡献者
+// 本文件遵循 GPL-3.0-or-later 发布，条款见仓库根目录 LICENSE（本程序无担保）。
 package cn.hbu.schedule.ui
 
 /** 要填进登录页的字段。留空的不填，所以登录失败后可以只补验证码。 */

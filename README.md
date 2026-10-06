@@ -101,7 +101,7 @@ node tools/capture-schedule.mjs           # 学号密码登录，导出 schedule
 
 ## License
 
-本仓库以 **GPL-3.0-or-later**（GNU 通用公共许可证第 3 版，或您选择的更高版本）发布，协议全文见 `LICENSE`。
+本仓库以 **GPL-3.0-or-later**（GNU 通用公共许可证第 3 版，或您选择的更高版本）发布，协议全文见 `LICENSE`。每个源文件（`.kt` / `.py` / `.mjs`）顶部都带 `SPDX-License-Identifier: GPL-3.0-or-later` 和版权声明，Gradle 构建脚本与测试数据夹具除外。
 
 Copyright (C) 2026 咕杼 及本项目其他贡献者
 
